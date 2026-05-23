@@ -66,6 +66,75 @@ def filter_motion_roi(points):
     ]
 
 
+def classify_line_cross(points):
+    """Conta SOLO se la traiettoria attraversa la linea da un lato all'altro,
+    superando il margine in entrambi i sensi.
+
+    Robusto contro:
+    - persone che stazionano vicino alla porta e fanno avanti/indietro
+    - false partenze / micro-movimenti
+    - tracking interrotto a metà attraversamento
+    """
+    if len(points) < Config.MOTION_MIN_POINTS:
+        return None, f"too_few_points raw={len(points)}"
+
+    cleaned = clean_points(points)
+    roi = filter_motion_roi(cleaned)
+
+    if len(roi) < Config.MOTION_MIN_POINTS:
+        return None, (
+            f"too_few_roi_points raw={len(points)} "
+            f"cleaned={len(cleaned)} roi={len(roi)}"
+        )
+
+    line = Config.LINE_Y
+    m = Config.LINE_MARGIN
+    top_threshold = line - m       # zona "sopra la linea" (y piccolo)
+    bot_threshold = line + m       # zona "sotto la linea" (y grande)
+
+    sample = max(2, min(5, len(roi) // 3))
+    first_y = median([p[1] for p in roi[:sample]])
+    last_y = median([p[1] for p in roi[-sample:]])
+
+    # serve che ALMENO un punto stia chiaramente sopra E almeno uno sotto
+    has_top = any(p[1] <= top_threshold for p in roi)
+    has_bot = any(p[1] >= bot_threshold for p in roi)
+
+    if not (has_top and has_bot):
+        return None, (
+            f"no_cross_through_zone line={line:.2f} margin={m:.2f} "
+            f"first_y={first_y:.3f} last_y={last_y:.3f} "
+            f"has_top={has_top} has_bot={has_bot}"
+        )
+
+    # condizione di attraversamento netto
+    if first_y <= top_threshold and last_y >= bot_threshold:
+        movement = "down"
+    elif first_y >= bot_threshold and last_y <= top_threshold:
+        movement = "up"
+    else:
+        return None, (
+            f"incomplete_cross line={line:.2f} margin={m:.2f} "
+            f"first_y={first_y:.3f} last_y={last_y:.3f}"
+        )
+
+    result = "enter" if movement == Config.ENTER_DIRECTION else "exit"
+    reason = (
+        f"line_cross movement={movement} "
+        f"first_y={first_y:.3f} last_y={last_y:.3f} "
+        f"line={line:.2f} margin={m:.2f} "
+        f"raw={len(points)} cleaned={len(cleaned)} roi={len(roi)}"
+    )
+    return result, reason
+
+
+def classify(points):
+    """Dispatcher: usa la modalità configurata."""
+    if Config.COUNT_MODE == "line_cross":
+        return classify_line_cross(points)
+    return classify_full_motion(points)
+
+
 def classify_full_motion(points):
     """Analizza tutti i punti del track e decide enter / exit / None."""
     if len(points) < Config.MOTION_MIN_POINTS:

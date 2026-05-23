@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings — Person Counter — {{ camera }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg:#000; --panel:#0d0d0d; --panel2:#161616; --panel3:#1f1f1f;
+      --border:#262626; --border-st:#3a3a3a;
+      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999; --dim:#666; --dimmer:#444;
+      --accent:#fff;
+      --line:#ffeb3b; --line-shade:rgba(255,235,59,.18);
+      --roi:#4fc3f7;  --roi-shade:rgba(79,195,247,.10);
+    }
+    body {
+      font-family:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
+      background:var(--bg); color:var(--text); margin:0;
+      font-feature-settings:"tnum" 1, "zero" 1;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background:var(--panel); border-bottom:1px solid var(--border);
+      padding:1rem 2rem; display:flex; align-items:center;
+      justify-content:space-between; flex-wrap:wrap; gap:1rem;
+    }
+    header h1 {
+      margin:0; font-size:.95rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.12em;
+    }
+    header h1 .cam{color:var(--accent)} header h1 .sep{color:var(--dimmer);margin:0 .5rem}
+    header h1 .crumb{color:var(--muted)}
+    .actions{display:flex; gap:.4rem; align-items:center}
+    .btn {
+      padding:.5rem .9rem; border-radius:3px;
+      background:var(--panel2); color:var(--text);
+      border:1px solid var(--border); cursor:pointer;
+      font-size:.75rem; font-weight:500; letter-spacing:.08em;
+      text-transform:uppercase; text-decoration:none; font-family:inherit;
+      display:inline-flex; align-items:center; gap:.35rem;
+      transition:background .15s, border-color .15s;
+    }
+    .btn:hover{background:var(--panel3); border-color:var(--border-st)}
+    .btn.primary{background:var(--accent); color:var(--bg);
+      border-color:var(--accent); font-weight:700}
+    .btn.primary:hover{background:#ccc}
+
+    main { padding:2rem; max-width:1400px; margin:0 auto; }
+
+    .layout{
+      display:grid; gap:1.5rem;
+      grid-template-columns:minmax(0,1fr) 360px;
+    }
+    @media (max-width:1000px){ .layout{grid-template-columns:1fr} }
+
+    .section-title{
+      display:flex; align-items:center; justify-content:space-between;
+      margin:0 0 .75rem;
+    }
+    .section-title h2{
+      margin:0; font-size:.7rem; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.15em; font-weight:500;
+    }
+    .section-title h2::before{content:"// "; color:var(--dimmer)}
+    .section-title .hint{color:var(--dim); font-size:.7rem}
+
+    /* ===== CANVAS PANEL ===== */
+    .canvas-panel{
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:4px; padding:1rem; position:relative;
+    }
+    .canvas-wrap{
+      position:relative; width:100%;
+      background:#000; border:1px solid var(--border); border-radius:3px;
+      overflow:hidden; aspect-ratio: 16/9;
+    }
+    .canvas-wrap img{
+      display:block; position:absolute; inset:0;
+      width:100%; height:100%; object-fit:contain;
+      pointer-events:none; user-select:none;
+    }
+    .canvas-wrap canvas{
+      position:absolute; inset:0; width:100%; height:100%;
+      cursor:crosshair;
+    }
+    .canvas-wrap.no-img::before{
+      content:"// snapshot non disponibile — controlla FRIGATE_URL"; color:var(--dim);
+      position:absolute; inset:0; display:flex;
+      align-items:center; justify-content:center;
+      font-size:.8rem; letter-spacing:.05em;
+    }
+    .canvas-toolbar{
+      display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
+      margin-top:.75rem;
+    }
+    .canvas-toolbar .legend{
+      display:flex; gap:.75rem; flex-wrap:wrap; color:var(--muted);
+      font-size:.7rem; letter-spacing:.05em; margin-left:auto;
+    }
+    .canvas-toolbar .legend .sw{
+      display:inline-block; width:10px; height:10px;
+      vertical-align:middle; margin-right:.35rem; border-radius:1px;
+    }
+    .canvas-toolbar .legend .sw.line{background:#ffeb3b}
+    .canvas-toolbar .legend .sw.roi{background:#4fc3f7}
+    .canvas-toolbar .legend .sw.margin{background:rgba(255,235,59,.4)}
+    .canvas-toolbar .refresh{color:var(--dim); font-size:.7rem}
+
+    /* ===== FORM PANEL ===== */
+    .form-panel{
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:4px; padding:1.25rem;
+      display:flex; flex-direction:column; gap:1.25rem;
+      max-height:calc(100vh - 8rem); overflow-y:auto;
+    }
+    .form-panel h3{
+      margin:0 0 .5rem; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.15em;
+      color:var(--muted); font-weight:500;
+    }
+    .form-panel h3::before{content:"// "; color:var(--dimmer)}
+
+    .group { display:flex; flex-direction:column; gap:.6rem; }
+    .field { display:grid; grid-template-columns:1fr 90px; gap:.5rem;
+             align-items:center; }
+    .field label{
+      font-size:.7rem; color:var(--text2);
+      letter-spacing:.03em;
+    }
+    .field label .desc{
+      display:block; color:var(--dim); font-size:.6rem;
+      margin-top:.15rem; letter-spacing:.04em;
+    }
+    .field input, .field select{
+      background:var(--panel2); color:var(--text);
+      border:1px solid var(--border); border-radius:3px;
+      padding:.4rem .5rem; font-size:.8rem;
+      font-family:inherit; text-align:right; width:100%;
+    }
+    .field select{text-align:left}
+    .field input:focus, .field select:focus{
+      outline:none; border-color:var(--accent);
+    }
+    .field-range{
+      display:grid; grid-template-columns:1fr 90px; gap:.5rem;
+      align-items:center;
+    }
+    .field-range input[type=range]{
+      width:100%; accent-color:var(--accent);
+    }
+
+    .actions-bar{
+      position:sticky; bottom:-1.25rem; margin:-1.25rem;
+      padding:1rem 1.25rem; background:var(--panel);
+      border-top:1px solid var(--border);
+      display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
+    }
+    .actions-bar .feedback{
+      flex:1; font-size:.7rem; color:var(--dim);
+      min-height:1rem;
+    }
+    .actions-bar .feedback.ok{color:var(--text)}
+    .actions-bar .feedback.err{color:#ffaaaa}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Person Counter <span class="sep">/</span>
+      <span class="cam">{{ camera }}</span>
+      <span class="sep">/</span>
+      <span class="crumb">Settings</span></h1>
+  <div class="actions">
+    <a class="btn" href="/">← Dashboard</a>
+    <a class="btn" href="/admin">Admin</a>
+    {% if auth_enabled %}<a class="btn" href="/logout">Logout</a>{% endif %}
+  </div>
+</header>
+
+<main>
+  <div class="layout">
+
+    <!-- ============ CANVAS LATO SINISTRO ============ -->
+    <div>
+      <div class="section-title">
+        <h2>Visualizzatore camera</h2>
+        <span class="hint">trascina la linea o i bordi della ROI</span>
+      </div>
+      <div class="canvas-panel">
+        <div class="canvas-wrap {% if not frigate_url_set %}no-img{% endif %}"
+             id="canvas-wrap">
+          <img id="snap" alt="" {% if not frigate_url_set %}style="display:none"{% endif %}>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="canvas-toolbar">
+          <button class="btn" id="btn-refresh">↻ Snapshot</button>
+          <label style="display:flex; align-items:center; gap:.4rem;
+                        color:var(--muted); font-size:.7rem;
+                        text-transform:uppercase; letter-spacing:.08em">
+            <input type="checkbox" id="auto-refresh" checked>
+            Auto refresh ({{ snapshot_refresh }}s)
+          </label>
+          <span class="refresh" id="refresh-meta"></span>
+          <div class="legend">
+            <span><span class="sw line"></span>Linea</span>
+            <span><span class="sw margin"></span>Zona morta (margine)</span>
+            <span><span class="sw roi"></span>ROI</span>
+          </div>
+        </div>
+      </div>
+
+      {% if not frigate_url_set %}
+      <div class="canvas-panel" style="margin-top:1rem; color:var(--muted);
+                                       font-size:.8rem; line-height:1.6">
+        Imposta <code style="background:var(--panel2); padding:.1rem .4rem;
+        border-radius:2px; border:1px solid var(--border)">FRIGATE_URL</code>
+        nell'<code style="background:var(--panel2); padding:.1rem .4rem;
+        border-radius:2px; border:1px solid var(--border)">environment</code>
+        del container (es. <code style="background:var(--panel2); padding:.1rem .4rem;
+        border-radius:2px; border:1px solid var(--border)">http://192.168.1.10:5000</code>)
+        per vedere lo snapshot live della camera e disegnare ROI/linea graficamente.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ============ FORM LATO DESTRO ============ -->
+    <form class="form-panel" id="settings-form" onsubmit="return false">
+
+      <div class="group">
+        <h3>Modalità</h3>
+        <div class="field">
+          <label>Algoritmo di conteggio
+            <span class="desc">line_cross = richiede attraversamento netto (raccomandato)</span>
+          </label>
+          <select name="COUNT_MODE">
+            <option value="line_cross">line_cross</option>
+            <option value="full_motion">full_motion</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Direzione ingresso
+            <span class="desc">up = entra dal basso verso l'alto</span>
+          </label>
+          <select name="ENTER_DIRECTION">
+            <option value="up">up</option>
+            <option value="down">down</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Punto di tracking
+            <span class="desc">bottom = piedi · center = centro box</span>
+          </label>
+          <select name="POINT_MODE">
+            <option value="bottom">bottom</option>
+            <option value="center">center</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Linea di attraversamento (line_cross)</h3>
+        <div class="field-range">
+          <input type="range" name="LINE_Y" min="0" max="1" step="0.01">
+          <input type="number" name="LINE_Y_num" min="0" max="1" step="0.01">
+        </div>
+        <div class="field"><label>LINE_Y <span class="desc">posizione verticale 0..1</span></label><span></span></div>
+        <div class="field-range">
+          <input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01">
+          <input type="number" name="LINE_MARGIN_num" min="0" max="0.45" step="0.01">
+        </div>
+        <div class="field"><label>LINE_MARGIN <span class="desc">"zona morta": chi non la supera non conta</span></label><span></span></div>
+      </div>
+
+      <div class="group">
+        <h3>ROI (zona utile della porta)</h3>
+        <div class="field-range">
+          <input type="range" name="MOTION_X1" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_X1_num" min="0" max="1" step="0.01">
+        </div>
+        <div class="field"><label>MOTION_X1 <span class="desc">bordo sinistro</span></label><span></span></div>
+        <div class="field-range">
+          <input type="range" name="MOTION_X2" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_X2_num" min="0" max="1" step="0.01">
+        </div>
+        <div class="field"><label>MOTION_X2 <span class="desc">bordo destro</span></label><span></span></div>
+        <div class="field-range">
+          <input type="range" name="MOTION_Y1" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_Y1_num" min="0" max="1" step="0.01">
+        </div>
+        <div class="field"><label>MOTION_Y1 <span class="desc">bordo alto</span></label><span></span></div>
+        <div class="field-range">
+          <input type="range" name="MOTION_Y2" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_Y2_num" min="0" max="1" step="0.01">
+        </div>
+        <div class="field"><label>MOTION_Y2 <span class="desc">bordo basso</span></label><span></span></div>
+      </div>
+
+      <div class="group">
+        <h3>Soglie movimento (full_motion)</h3>
+        <div class="field">
+          <label>MOTION_MIN_POINTS <span class="desc">punti minimi del track</span></label>
+          <input type="number" name="MOTION_MIN_POINTS" min="2" max="50" step="1">
+        </div>
+        <div class="field">
+          <label>MOTION_MIN_DELTA_Y <span class="desc">spostamento Y minimo</span></label>
+          <input type="number" name="MOTION_MIN_DELTA_Y" min="0" max="1" step="0.01">
+        </div>
+        <div class="field">
+          <label>MOTION_MIN_SPAN_Y <span class="desc">escursione Y minima</span></label>
+          <input type="number" name="MOTION_MIN_SPAN_Y" min="0" max="1" step="0.01">
+        </div>
+        <div class="field">
+          <label>MOTION_MIN_NET_RATIO <span class="desc">delta/span minimo</span></label>
+          <input type="number" name="MOTION_MIN_NET_RATIO" min="0" max="1" step="0.01">
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Tracking</h3>
+        <div class="field">
+          <label>JITTER_DISTANCE <span class="desc">filtra micro-movimenti</span></label>
+          <input type="number" name="JITTER_DISTANCE" min="0" max="0.2" step="0.005">
+        </div>
+        <div class="field">
+          <label>TRACK_TTL <span class="desc">sec. di vita track</span></label>
+          <input type="number" name="TRACK_TTL" min="1" max="300" step="1">
+        </div>
+        <div class="field">
+          <label>TRACK_POINTS_MAX <span class="desc">cap punti per track</span></label>
+          <input type="number" name="TRACK_POINTS_MAX" min="10" max="2000" step="10">
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <span class="feedback" id="feedback"></span>
+        <button class="btn" type="button" id="btn-reset">Annulla</button>
+        <button class="btn primary" type="button" id="btn-save">Salva</button>
+      </div>
+    </form>
+
+  </div>
+</main>
+
+<script>
+  // ===========================================================
+  //  STATO CONDIVISO
+  // ===========================================================
+  const initial = {{ current|tojson }};
+  let s = Object.assign({}, initial);  // working copy
+  const REFRESH_SEC = {{ snapshot_refresh }};
+  const FRIGATE_OK = {{ 'true' if frigate_url_set else 'false' }};
+
+  // ===========================================================
+  //  FORM ↔ STATE
+  // ===========================================================
+  const form = document.getElementById('settings-form');
+
+  function setFormFromState() {
+    for (const k of Object.keys(s)) {
+      const el = form.elements[k];
+      if (el) {
+        el.value = s[k];
+        // sincronizza il number gemello degli slider
+        const numEl = form.elements[k + '_num'];
+        if (numEl) numEl.value = s[k];
+      }
+    }
+    drawOverlay();
+  }
+
+  function readFormToState() {
+    for (const k of Object.keys(s)) {
+      const el = form.elements[k];
+      if (!el) continue;
+      const v = el.value;
+      if (v === '' || v === null || v === undefined) continue;
+      if (typeof initial[k] === 'number') s[k] = parseFloat(v);
+      else s[k] = v;
+    }
+  }
+
+  // sync slider <-> number gemello + redraw on every change
+  form.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.name) return;
+    if (t.name.endsWith('_num')) {
+      const base = t.name.slice(0, -4);
+      const baseEl = form.elements[base];
+      if (baseEl) baseEl.value = t.value;
+    } else {
+      const numEl = form.elements[t.name + '_num'];
+      if (numEl) numEl.value = t.value;
+    }
+    readFormToState();
+    drawOverlay();
+  });
+
+  // ===========================================================
+  //  CANVAS OVERLAY (ROI + LINEA + MARGINE)
+  // ===========================================================
+  const wrap = document.getElementById('canvas-wrap');
+  const canvas = document.getElementById('overlay');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const rect = wrap.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawOverlay();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  function drawOverlay() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // ---- zona morta (margine) ----
+    const lineY = s.LINE_Y * h;
+    const mTopY = (s.LINE_Y - s.LINE_MARGIN) * h;
+    const mBotY = (s.LINE_Y + s.LINE_MARGIN) * h;
+    ctx.fillStyle = 'rgba(255,235,59,.10)';
+    ctx.fillRect(0, mTopY, w, mBotY - mTopY);
+
+    // ---- ROI ----
+    const x1 = s.MOTION_X1 * w, y1 = s.MOTION_Y1 * h;
+    const x2 = s.MOTION_X2 * w, y2 = s.MOTION_Y2 * h;
+    ctx.fillStyle = 'rgba(79,195,247,.06)';
+    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.setLineDash([]);
+
+    // ---- linea di attraversamento ----
+    ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(w, lineY); ctx.stroke();
+    // bordi margine tratteggiati
+    ctx.strokeStyle = 'rgba(255,235,59,.6)'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(0, mTopY); ctx.lineTo(w, mTopY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, mBotY); ctx.lineTo(w, mBotY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ---- handle agli angoli ROI ----
+    ctx.fillStyle = '#4fc3f7';
+    [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y]) => {
+      ctx.fillRect(x-5, y-5, 10, 10);
+    });
+
+    // ---- handle al centro della linea ----
+    ctx.fillStyle = '#ffeb3b';
+    ctx.fillRect(w/2 - 25, lineY - 4, 50, 8);
+
+    // ---- etichette ----
+    ctx.fillStyle = '#ffeb3b'; ctx.font = '11px "Roboto Mono", monospace';
+    ctx.fillText('LINE Y=' + s.LINE_Y.toFixed(2), 8, lineY - 6);
+    ctx.fillStyle = '#4fc3f7';
+    ctx.fillText('ROI', x1 + 5, y1 + 14);
+  }
+
+  // ---- drag interattivo ----
+  let drag = null;   // {type:'line'|'roi-tl'|'roi-tr'|'roi-bl'|'roi-br'|'roi-l'|'roi-r'|'roi-t'|'roi-b'}
+  function pickHandle(px, py) {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const x1 = s.MOTION_X1*w, y1 = s.MOTION_Y1*h;
+    const x2 = s.MOTION_X2*w, y2 = s.MOTION_Y2*h;
+    const lineY = s.LINE_Y*h;
+    const H = 10;
+
+    // handle centrale linea (banda di 8px)
+    if (Math.abs(py - lineY) <= 6 && px > w/2 - 30 && px < w/2 + 30)
+      return 'line-handle';
+    if (Math.abs(py - lineY) <= 4) return 'line';
+
+    if (Math.abs(px-x1)<H && Math.abs(py-y1)<H) return 'roi-tl';
+    if (Math.abs(px-x2)<H && Math.abs(py-y1)<H) return 'roi-tr';
+    if (Math.abs(px-x1)<H && Math.abs(py-y2)<H) return 'roi-bl';
+    if (Math.abs(px-x2)<H && Math.abs(py-y2)<H) return 'roi-br';
+    if (Math.abs(px-x1)<H && py>y1 && py<y2) return 'roi-l';
+    if (Math.abs(px-x2)<H && py>y1 && py<y2) return 'roi-r';
+    if (Math.abs(py-y1)<H && px>x1 && px<x2) return 'roi-t';
+    if (Math.abs(py-y2)<H && px>x1 && px<x2) return 'roi-b';
+    return null;
+  }
+
+  function cursorFor(h){
+    if (!h) return 'crosshair';
+    if (h.startsWith('line')) return 'ns-resize';
+    if (h === 'roi-tl' || h === 'roi-br') return 'nwse-resize';
+    if (h === 'roi-tr' || h === 'roi-bl') return 'nesw-resize';
+    if (h === 'roi-l' || h === 'roi-r') return 'ew-resize';
+    if (h === 'roi-t' || h === 'roi-b') return 'ns-resize';
+    return 'crosshair';
+  }
+
+  function evtPos(e){
+    const r = canvas.getBoundingClientRect();
+    return [e.clientX - r.left, e.clientY - r.top];
+  }
+  function clamp(v){return Math.max(0, Math.min(1, v))}
+
+  canvas.addEventListener('mousedown', (e) => {
+    const [px,py] = evtPos(e);
+    const h = pickHandle(px,py);
+    if (h) drag = h;
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    const [px,py] = evtPos(e);
+    if (!drag) {
+      canvas.style.cursor = cursorFor(pickHandle(px,py));
+      return;
+    }
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const nx = clamp(px/w), ny = clamp(py/h);
+
+    if (drag.startsWith('line')) {
+      s.LINE_Y = ny;
+    } else {
+      if (drag.includes('l')) s.MOTION_X1 = Math.min(nx, s.MOTION_X2 - 0.05);
+      if (drag.includes('r')) s.MOTION_X2 = Math.max(nx, s.MOTION_X1 + 0.05);
+      if (drag.includes('t')) s.MOTION_Y1 = Math.min(ny, s.MOTION_Y2 - 0.05);
+      if (drag.includes('b')) s.MOTION_Y2 = Math.max(ny, s.MOTION_Y1 + 0.05);
+    }
+    setFormFromState();
+  });
+  window.addEventListener('mouseup', () => drag = null);
+
+  // ===========================================================
+  //  SNAPSHOT
+  // ===========================================================
+  const img = document.getElementById('snap');
+  const refreshMeta = document.getElementById('refresh-meta');
+  const autoCb = document.getElementById('auto-refresh');
+  let timer = null;
+
+  async function loadSnapshot() {
+    if (!FRIGATE_OK) return;
+    try {
+      const url = '/api/snapshot?_=' + Date.now();
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const blob = await r.blob();
+      const old = img.src;
+      img.src = URL.createObjectURL(blob);
+      if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+      refreshMeta.textContent = 'aggiornato ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      refreshMeta.textContent = '✗ ' + e.message;
+    }
+  }
+  img.addEventListener('load', resizeCanvas);
+
+  function startAuto() {
+    if (timer) clearInterval(timer);
+    if (autoCb.checked && FRIGATE_OK) {
+      timer = setInterval(loadSnapshot, REFRESH_SEC * 1000);
+    }
+  }
+  autoCb.addEventListener('change', startAuto);
+  document.getElementById('btn-refresh').addEventListener('click', loadSnapshot);
+
+  // ===========================================================
+  //  SAVE / RESET
+  // ===========================================================
+  const fb = document.getElementById('feedback');
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    s = Object.assign({}, initial);
+    setFormFromState();
+    fb.textContent = 'modifiche annullate';
+    fb.className = 'feedback';
+  });
+
+  document.getElementById('btn-save').addEventListener('click', async () => {
+    readFormToState();
+    try {
+      const r = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(s),
+      });
+      const d = await r.json();
+      if (r.ok && d.ok) {
+        fb.textContent = '✓ salvato (' + d.changed.length + ' parametri)';
+        fb.className = 'feedback ok';
+        // refresh dei valori dal server (in caso di clamping)
+        Object.assign(s, d.current);
+        Object.assign(initial, d.current);
+        setFormFromState();
+      } else {
+        fb.textContent = '✗ ' + (d.error || 'errore');
+        fb.className = 'feedback err';
+      }
+    } catch (e) {
+      fb.textContent = '✗ ' + e.message;
+      fb.className = 'feedback err';
+    }
+  });
+
+  // ===========================================================
+  //  BOOT
+  // ===========================================================
+  setFormFromState();
+  resizeCanvas();
+  if (FRIGATE_OK) {
+    loadSnapshot();
+    startAuto();
+  } else {
+    // disegna comunque l'overlay su sfondo nero
+    resizeCanvas();
+  }
+</script>
+
+</body>
+</html>

@@ -3,6 +3,8 @@
 import csv
 import io
 import time
+import urllib.error
+import urllib.request
 from datetime import date, datetime, timedelta
 
 from flask import (Flask, Response, jsonify, redirect, render_template,
@@ -10,6 +12,7 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
 
 from app.auth import credentials_match, login_required
 from app.config import Config
+from app.settings import EDITABLE, Settings
 from app.storage import summarize_hourly
 
 
@@ -288,5 +291,71 @@ def create_app(store, tracker):
                     f'attachment; filename="counter_{Config.CAMERA}_{day}.csv"',
             },
         )
+
+    # -------- SETTINGS --------
+
+    @app.route("/settings")
+    @login_required
+    def settings_page():
+        return render_template(
+            "settings.html",
+            camera=Config.CAMERA,
+            current=Settings.current(),
+            frigate_url_set=bool(Config.FRIGATE_URL),
+            snapshot_refresh=Config.SNAPSHOT_REFRESH_SEC,
+            auth_enabled=Config.auth_enabled(),
+        )
+
+    @app.route("/api/settings", methods=["GET"])
+    @login_required
+    def api_settings_get():
+        return jsonify({
+            "current": Settings.current(),
+            "editable": {k: {"type": t, "min": lo, "max": hi}
+                         for k, (t, lo, hi) in EDITABLE.items()},
+            "frigate_url_set": bool(Config.FRIGATE_URL),
+        })
+
+    @app.route("/api/settings", methods=["POST"])
+    @login_required
+    def api_settings_post():
+        if request.is_json:
+            payload = request.get_json(silent=True) or {}
+        else:
+            payload = request.form.to_dict()
+        try:
+            changed = Settings.update(payload)
+        except ValueError as e:
+            return jsonify({"ok": False, "error": str(e)}), 400
+        print(f"[settings] aggiornati da UI: {changed}", flush=True)
+        return jsonify({
+            "ok": True,
+            "changed": changed,
+            "current": Settings.current(),
+        })
+
+    @app.route("/api/snapshot")
+    @login_required
+    def api_snapshot():
+        """Proxy verso Frigate latest.jpg, evita CORS e tiene l'auth lato server."""
+        if not Config.FRIGATE_URL:
+            return jsonify({
+                "ok": False,
+                "error": "FRIGATE_URL non configurata",
+            }), 503
+        url = f"{Config.FRIGATE_URL}/api/{Config.CAMERA}/latest.jpg"
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "frigate-counter"})
+            with urllib.request.urlopen(req, timeout=4) as r:
+                data = r.read()
+                ctype = r.headers.get("Content-Type", "image/jpeg")
+        except urllib.error.URLError as e:
+            return jsonify({"ok": False, "error": f"frigate unreachable: {e}"}), 502
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+        return Response(data, mimetype=ctype, headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        })
 
     return app

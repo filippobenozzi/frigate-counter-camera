@@ -21,6 +21,10 @@ class Config:
     POINT_MODE = os.environ.get("POINT_MODE", "bottom").lower()
     DEBUG = os.environ.get("DEBUG", "1") == "1"
 
+    # full_motion = delta_y + span_y + net_ratio (logica vecchia)
+    # line_cross  = la persona DEVE attraversare la linea da un lato all'altro
+    COUNT_MODE = os.environ.get("COUNT_MODE", "line_cross").lower()
+
     TRACK_TTL = float(os.environ.get("TRACK_TTL", "30"))
     TRACK_POINTS_MAX = int(os.environ.get("TRACK_POINTS_MAX", "120"))
 
@@ -28,6 +32,10 @@ class Config:
     MOTION_X2 = float(os.environ.get("MOTION_X2", "0.92"))
     MOTION_Y1 = float(os.environ.get("MOTION_Y1", "0.05"))
     MOTION_Y2 = float(os.environ.get("MOTION_Y2", "0.98"))
+
+    # parametri per modalità line_cross
+    LINE_Y         = float(os.environ.get("LINE_Y", "0.50"))
+    LINE_MARGIN    = float(os.environ.get("LINE_MARGIN", "0.08"))
 
     MOTION_MIN_POINTS = int(os.environ.get("MOTION_MIN_POINTS", "4"))
     MOTION_MIN_DELTA_Y = float(os.environ.get("MOTION_MIN_DELTA_Y", "0.16"))
@@ -37,10 +45,15 @@ class Config:
     JITTER_DISTANCE = float(os.environ.get("JITTER_DISTANCE", "0.015"))
     REQUIRED_ZONE = os.environ.get("REQUIRED_ZONE", "").strip()
 
+    # ---- Frigate (per snapshot) ----
+    FRIGATE_URL = os.environ.get("FRIGATE_URL", "").rstrip("/")
+    SNAPSHOT_REFRESH_SEC = float(os.environ.get("SNAPSHOT_REFRESH_SEC", "3"))
+
     # ---- Storage JSON (sempre attivo) ----
     LOG_DIR = os.environ.get("LOG_DIR", "/data")
     COUNTS_FILE = os.environ.get("COUNTS_FILE", f"{LOG_DIR}/counts.json")
     EVENTS_FILE = os.environ.get("EVENTS_FILE", f"{LOG_DIR}/events.jsonl")
+    SETTINGS_FILE = os.environ.get("SETTINGS_FILE", f"{LOG_DIR}/settings.json")
 
     # ---- Auth ----
     AUTH_USER = os.environ.get("AUTH_USER", "").strip()

@@ -22,6 +22,13 @@ services:
       ENTER_DIRECTION: "up"      # up = entrare = dal basso verso l'alto
       POINT_MODE: "bottom"       # bottom | center
 
+      # ---- Modalità di conteggio ----
+      # line_cross  = robusto contro persone che stazionano (raccomandato)
+      # full_motion = vecchia logica delta_y/span/net_ratio
+      COUNT_MODE: "line_cross"
+      LINE_Y: "0.50"             # linea orizzontale 0..1 (alto..basso)
+      LINE_MARGIN: "0.08"        # zona morta sopra/sotto la linea
+
       # ---- ROI / soglie movimento ----
       MOTION_X1: "0.20"
       MOTION_X2: "0.92"
@@ -33,6 +40,10 @@ services:
       MOTION_MIN_NET_RATIO: "0.45"
       JITTER_DISTANCE: "0.015"
       REQUIRED_ZONE: ""
+
+      # ---- Frigate (per snapshot live nella pagina /settings) ----
+      FRIGATE_URL: "http://192.168.1.10:5000"
+      SNAPSHOT_REFRESH_SEC: "3"
 
       # ---- Storage JSON (sempre attivo come backup locale) ----
       LOG_DIR: "/data"

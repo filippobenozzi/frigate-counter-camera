@@ -6,7 +6,7 @@ import time
 import paho.mqtt.client as mqtt
 
 from app.config import Config
-from app.motion import classify_full_motion, point_from_box
+from app.motion import classify, point_from_box
 
 
 def zones_match(after) -> bool:
@@ -38,17 +38,18 @@ def run(store, tracker):
         tracker.mark_counted(evt_id)
         snap = store.snapshot()
         ts = time.time()
+        method = Config.COUNT_MODE
         store.save_counts()
         store.insert_event(
             event_id=evt_id, ts=ts, event_type=result,
-            method="full_motion",
+            method=method,
             start_xy=start_pt, end_xy=end_pt,
             reason=reason, snapshot=snap,
         )
         tracker.recent.appendleft({
             "id": evt_id, "ts": ts, "type": result,
             "start": start_pt, "end": end_pt,
-            "method": "full_motion", "reason": reason,
+            "method": method, "reason": reason,
         })
         return snap
 
@@ -105,8 +106,9 @@ def run(store, tracker):
                 )
 
             if msg_type == "end" and t and not tracker.is_counted(evt_id):
-                result, reason = classify_full_motion(list(t["points"]))
-                print(f"[motion] {evt_id}: {reason}", flush=True)
+                result, reason = classify(list(t["points"]))
+                print(f"[motion/{Config.COUNT_MODE}] {evt_id}: {reason}",
+                      flush=True)
                 if result:
                     snap_to_publish = register_count(
                         client, evt_id, result, t["first"], point, reason,
