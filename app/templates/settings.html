@@ -129,10 +129,10 @@
     }
     /* il canvas a tutta larghezza diventerebbe enorme: lo limitiamo */
     .canvas-panel { max-width:1100px; margin:0 auto; width:100%; }
-    /* i parametri sotto, in griglia auto-fit di card */
+    /* i parametri sotto, una card sotto l'altra (stessa larghezza dello snapshot) */
     .params-grid {
-      display:grid; gap:1rem;
-      grid-template-columns:repeat(auto-fit, minmax(320px,1fr));
+      display:flex; flex-direction:column; gap:1rem;
+      max-width:1100px; margin:0 auto;
     }
     .params-grid .card { margin-bottom:0; }
 
