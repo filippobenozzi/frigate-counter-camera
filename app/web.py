@@ -172,12 +172,7 @@ def create_app(store, tracker):
             }
         return jsonify(data)
 
-    # -------- ADMIN (vecchia pagina → ora unificata in /settings) --------
-
-    @app.route("/admin")
-    @login_required
-    def admin():
-        return redirect(url_for("settings_page"))
+    # -------- API ADMIN (i bottoni "Reset" nella pagina /settings le chiamano) --------
 
     @app.route("/api/admin/reset-counters", methods=["POST"])
     @login_required

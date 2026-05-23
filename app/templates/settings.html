@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Settings — Person Counter — {{ camera }}</title>
+  <title>Impostazioni — {{ camera }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -12,10 +12,11 @@
     :root {
       --bg:#000; --panel:#0d0d0d; --panel2:#161616; --panel3:#1f1f1f;
       --border:#262626; --border-st:#3a3a3a;
-      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999; --dim:#666; --dimmer:#444;
+      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999;
+      --dim:#666; --dimmer:#444;
       --accent:#fff;
-      --line:#ffeb3b; --line-shade:rgba(255,235,59,.18);
-      --roi:#4fc3f7;  --roi-shade:rgba(79,195,247,.10);
+      --line:#ffeb3b; --roi:#4fc3f7;
+      --ok:#88dd88; --warn:#ffd58a; --err:#ffaaaa;
     }
     body {
       font-family:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -23,7 +24,7 @@
       font-feature-settings:"tnum" 1, "zero" 1;
     }
 
-    /* ===== HEADER ===== */
+    /* ============ HEADER ============ */
     header {
       background:var(--panel); border-bottom:1px solid var(--border);
       padding:1rem 2rem; display:flex; align-items:center;
@@ -33,9 +34,52 @@
       margin:0; font-size:.95rem; font-weight:700;
       text-transform:uppercase; letter-spacing:.12em;
     }
-    header h1 .cam{color:var(--accent)} header h1 .sep{color:var(--dimmer);margin:0 .5rem}
+    header h1 .cam{color:var(--accent)}
+    header h1 .sep{color:var(--dimmer); margin:0 .5rem}
     header h1 .crumb{color:var(--muted)}
     .actions{display:flex; gap:.4rem; align-items:center}
+
+    /* ============ TABS BAR ============ */
+    .tabs-bar {
+      background:var(--panel);
+      border-bottom:1px solid var(--border);
+      padding:0 2rem;
+      display:flex; gap:.25rem;
+      overflow-x:auto; scrollbar-width:none;
+    }
+    .tabs-bar::-webkit-scrollbar { display:none; }
+    .tab {
+      padding:.95rem 1.25rem;
+      background:transparent; color:var(--muted); border:0;
+      border-bottom:2px solid transparent;
+      font-family:inherit; font-size:.75rem; font-weight:500;
+      letter-spacing:.12em; text-transform:uppercase;
+      cursor:pointer; white-space:nowrap;
+      transition:color .15s, border-color .15s;
+      display:inline-flex; align-items:center; gap:.5rem;
+    }
+    .tab:hover { color:var(--text2); }
+    .tab.active {
+      color:var(--accent);
+      border-bottom-color:var(--accent);
+    }
+    .tab .ico {
+      font-size:1rem; line-height:1; opacity:.85;
+    }
+    .tab .badge-mini {
+      display:inline-block; min-width:18px; padding:.05rem .35rem;
+      background:var(--panel3); color:var(--muted);
+      font-size:.6rem; border-radius:2px; font-weight:600;
+      border:1px solid var(--border);
+    }
+
+    .tab-panel {
+      display:none;
+      padding:2rem; max-width:1400px; margin:0 auto;
+    }
+    .tab-panel.active { display:block; }
+
+    /* ============ BUTTONS ============ */
     .btn {
       padding:.5rem .9rem; border-radius:3px;
       background:var(--panel2); color:var(--text);
@@ -45,39 +89,56 @@
       display:inline-flex; align-items:center; gap:.35rem;
       transition:background .15s, border-color .15s;
     }
-    .btn:hover{background:var(--panel3); border-color:var(--border-st)}
-    .btn.primary{background:var(--accent); color:var(--bg);
-      border-color:var(--accent); font-weight:700}
-    .btn.primary:hover{background:#ccc}
-
-    main { padding:2rem; max-width:1400px; margin:0 auto; }
-
-    .layout{
-      display:grid; gap:1.5rem;
-      grid-template-columns:minmax(0,1fr) 360px;
+    .btn:hover{ background:var(--panel3); border-color:var(--border-st); }
+    .btn.primary {
+      background:var(--accent); color:var(--bg);
+      border-color:var(--accent); font-weight:700;
     }
-    @media (max-width:1000px){ .layout{grid-template-columns:1fr} }
+    .btn.primary:hover{ background:#ccc; }
+    .btn.danger{ color:var(--text); border-color:var(--border-st); }
+    .btn.danger:hover{
+      background:#2a1414; border-color:#5a3030; color:#ffaaaa;
+    }
+    .btn.warn:hover{
+      background:#1f1a10; border-color:#5a4a20; color:#ffd58a;
+    }
+    .btn-mini{
+      font-size:.6rem; padding:.3rem .6rem;
+    }
 
+    /* ============ SECTION TITLE ============ */
     .section-title{
       display:flex; align-items:center; justify-content:space-between;
-      margin:0 0 .75rem;
+      margin:0 0 1rem;
     }
+    .section-title:not(:first-child){ margin-top:2rem; }
     .section-title h2{
       margin:0; font-size:.7rem; color:var(--muted);
       text-transform:uppercase; letter-spacing:.15em; font-weight:500;
     }
-    .section-title h2::before{content:"// "; color:var(--dimmer)}
-    .section-title .hint{color:var(--dim); font-size:.7rem}
+    .section-title h2::before{ content:"// "; color:var(--dimmer); }
+    .section-title .hint{
+      color:var(--dim); font-size:.7rem; letter-spacing:.05em;
+    }
 
-    /* ===== CANVAS PANEL ===== */
+    /* ============ TAB CAMERA: layout split ============ */
+    .camera-split {
+      display:grid; gap:1.5rem;
+      grid-template-columns:minmax(0,1fr) 380px;
+    }
+    @media (max-width:1100px){
+      .camera-split{ grid-template-columns:1fr; }
+    }
+
+    /* ============ CANVAS PANEL ============ */
     .canvas-panel{
       background:var(--panel); border:1px solid var(--border);
       border-radius:4px; padding:1rem; position:relative;
     }
     .canvas-wrap{
-      position:relative; width:100%;
-      background:#000; border:1px solid var(--border); border-radius:3px;
-      overflow:hidden; aspect-ratio: 16/9;
+      position:relative; width:100%; background:#000;
+      border:1px solid var(--border); border-radius:3px;
+      overflow:hidden; aspect-ratio:16/9;
     }
     .canvas-wrap img{
       display:block; position:absolute; inset:0;
@@ -111,68 +172,113 @@
     .canvas-toolbar .legend .sw.margin{background:rgba(255,235,59,.4)}
     .canvas-toolbar .refresh{color:var(--dim); font-size:.7rem}
 
-    /* ===== FORM PANEL ===== */
-    .form-panel{
+    /* ============ FORM card ============ */
+    .card {
       background:var(--panel); border:1px solid var(--border);
-      border-radius:4px; padding:1.25rem;
-      display:flex; flex-direction:column; gap:1.25rem;
-      max-height:calc(100vh - 8rem); overflow-y:auto;
+      border-radius:4px; padding:1.25rem; margin-bottom:1rem;
     }
-    .form-panel h3{
-      margin:0 0 .5rem; font-size:.7rem;
+    .card h3 {
+      margin:0 0 1rem; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.15em;
-      color:var(--muted); font-weight:500;
+      color:var(--text); font-weight:500;
+      display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
     }
-    .form-panel h3::before{content:"// "; color:var(--dimmer)}
+    .card h3::before{ content:"// "; color:var(--dimmer); }
+    .card h3 .restart-tag{
+      font-size:.55rem; font-weight:500; letter-spacing:.1em;
+      color:var(--warn); padding:.15rem .45rem;
+      background:rgba(255,213,138,.08);
+      border:1px solid rgba(255,213,138,.25);
+      border-radius:2px; text-transform:uppercase;
+    }
+    .card h3 .pg-badge{
+      font-size:.55rem; font-weight:500; letter-spacing:.1em;
+      padding:.15rem .45rem; background:var(--panel3);
+      color:var(--dim); border:1px solid var(--border);
+      border-radius:2px; text-transform:uppercase;
+    }
+    .card h3 .pg-badge.ok{
+      background:rgba(136,221,136,.08);
+      color:var(--ok); border-color:rgba(136,221,136,.25);
+    }
+    .card h3 .pg-badge.err{
+      background:rgba(255,170,170,.08);
+      color:var(--err); border-color:rgba(255,170,170,.25);
+    }
 
-    .group { display:flex; flex-direction:column; gap:.6rem; }
-    .field { display:grid; grid-template-columns:1fr 90px; gap:.5rem;
-             align-items:center; }
-    .field label{
-      font-size:.7rem; color:var(--text2);
-      letter-spacing:.03em;
+    .help {
+      background:var(--panel2); border:1px solid var(--border);
+      border-left:3px solid var(--accent);
+      border-radius:3px; padding:.7rem .9rem;
+      font-size:.72rem; line-height:1.55;
+      color:var(--text2); margin-bottom:1rem;
     }
-    .field label .desc{
-      display:block; color:var(--dim); font-size:.6rem;
-      margin-top:.15rem; letter-spacing:.04em;
+    .help.line { border-left-color:var(--line); }
+    .help.roi { border-left-color:var(--roi); }
+    .help p { margin:0; color:var(--muted); }
+    .help p + p { margin-top:.4rem; }
+    .help strong { color:var(--text); font-weight:500; }
+    .help code, .card code {
+      background:var(--bg); color:var(--text2);
+      padding:.05rem .35rem; border-radius:2px;
+      border:1px solid var(--border); font-size:.68rem;
     }
-    .field input, .field select{
+    .help summary {
+      cursor:pointer; user-select:none; color:var(--text);
+      font-weight:500; letter-spacing:.03em;
+    }
+
+    /* ============ FIELDS ============ */
+    .field {
+      display:grid; grid-template-columns:1fr 110px;
+      gap:.6rem; align-items:center; margin-bottom:.6rem;
+    }
+    .field.full { grid-template-columns:1fr; }
+    .field label {
+      font-size:.72rem; color:var(--text2); letter-spacing:.02em;
+    }
+    .field label .desc {
+      display:block; color:var(--dim);
+      font-size:.6rem; margin-top:.15rem;
+      letter-spacing:.04em;
+    }
+    .field input, .field select, .field textarea {
       background:var(--panel2); color:var(--text);
       border:1px solid var(--border); border-radius:3px;
-      padding:.4rem .5rem; font-size:.8rem;
+      padding:.45rem .55rem; font-size:.8rem;
       font-family:inherit; text-align:right; width:100%;
     }
-    .field select{text-align:left}
-    .field input:focus, .field select:focus{
+    .field select, .field textarea { text-align:left; }
+    .field textarea { resize:vertical; min-height:60px; }
+    .field input:focus, .field select:focus, .field textarea:focus {
       outline:none; border-color:var(--accent);
     }
-    .field-range{
-      display:grid; grid-template-columns:1fr 90px; gap:.5rem;
-      align-items:center;
+
+    .field-range {
+      display:grid; grid-template-columns:1fr 90px;
+      gap:.5rem; align-items:center; margin-bottom:.15rem;
     }
     .field-range input[type=range]{
       width:100%; accent-color:var(--accent);
     }
 
-    .actions-bar{
-      position:sticky; bottom:-1.25rem; margin:-1.25rem;
-      padding:1rem 1.25rem; background:var(--panel);
-      border-top:1px solid var(--border);
-      display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
+    .row-actions{
+      display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;
     }
-    .actions-bar .feedback{
-      flex:1; font-size:.7rem; color:var(--dim);
-      min-height:1rem;
+    .feedback{
+      margin-top:.75rem; font-size:.72rem;
+      color:var(--muted); line-height:1.5; word-break:break-word;
     }
-    .actions-bar .feedback.ok{color:var(--text)}
-    .actions-bar .feedback.err{color:#ffaaaa}
-    /* ===== STATUS GRID (sistema) ===== */
-    .system-block{ margin-top:2rem; }
+    .feedback:empty { margin-top:0; }
+    .feedback .ok { color:var(--ok); font-weight:500; }
+    .feedback .err{ color:var(--err); font-weight:500; }
+
+    /* ============ STATUS GRID (Sistema) ============ */
     .status-grid{
       display:grid; gap:1px;
       grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
       background:var(--border); border:1px solid var(--border);
-      border-radius:4px; overflow:hidden;
+      border-radius:4px; overflow:hidden; margin-bottom:2rem;
     }
     .stat{ background:var(--panel); padding:1rem 1.25rem; }
     .stat .lbl{
@@ -190,8 +296,7 @@
       margin-top:.35rem; letter-spacing:.05em;
     }
 
-    /* ===== RESET ACTIONS ===== */
-    .reset-block{ margin-top:2rem; }
+    /* ============ RESET ACTIONS ============ */
     .action{
       background:var(--panel); border:1px solid var(--border);
       border-left:3px solid var(--dimmer); border-radius:4px;
@@ -202,7 +307,7 @@
     .action.danger{ border-left-color:#aa3030; }
     .action.warn{   border-left-color:#aa7720; }
     .action.safe{   border-left-color:#4a4a4a; }
-    .action .desc h3{
+    .action .desc h4{
       margin:0 0 .35rem; font-size:.8rem; font-weight:700;
       text-transform:uppercase; letter-spacing:.1em;
     }
@@ -212,11 +317,6 @@
     .action .desc small{
       display:block; color:var(--dim); font-size:.7rem;
       margin-top:.5rem; letter-spacing:.03em;
-    }
-    .action .desc code{
-      background:var(--panel2); color:var(--text2);
-      padding:.1rem .4rem; border-radius:2px;
-      border:1px solid var(--border); font-size:.72rem;
     }
     .action .ctrl{
       display:flex; flex-direction:column;
@@ -232,47 +332,101 @@
       outline:none; border-color:var(--accent);
     }
     .action .ctrl .btn{ justify-content:center; }
-    .btn.danger{ color:var(--text); border-color:var(--border-st); }
-    .btn.danger:hover{
-      background:#2a1414; border-color:#5a3030; color:#ffaaaa;
-    }
-    .btn.warn:hover{
-      background:#1f1a10; border-color:#5a4a20; color:#ffd58a;
-    }
-    .reset-feedback{
-      margin-top:1.5rem; padding:1rem 1.25rem;
-      background:var(--panel2); border:1px solid var(--border-st);
-      border-left:3px solid var(--accent); border-radius:3px;
-      font-size:.8rem; color:var(--text2); min-height:1rem;
-    }
-    .reset-feedback:empty{ display:none; }
-    .reset-feedback .ok{ color:var(--text); font-weight:500; }
-    .reset-feedback .err{ color:#ffaaaa; font-weight:500; }
-
     @media (max-width:720px){
       .action{ grid-template-columns:1fr; }
       .action .ctrl{ min-width:0; }
     }
+
+    /* ============ SAVE BAR sticky ============ */
+    .save-bar {
+      position:sticky; bottom:0;
+      background:var(--panel);
+      border-top:1px solid var(--border);
+      margin:2rem -2rem 0;
+      padding:1rem 2rem;
+      display:flex; gap:.5rem; align-items:center;
+      flex-wrap:wrap;
+      box-shadow:0 -8px 16px rgba(0,0,0,.4);
+    }
+    .save-bar .save-feedback {
+      flex:1; min-height:1rem; font-size:.75rem;
+      color:var(--muted); line-height:1.4;
+    }
+    .save-bar .save-feedback .ok { color:var(--ok); font-weight:500; }
+    .save-bar .save-feedback .err{ color:var(--err); font-weight:500; }
+    .save-bar .save-feedback .warn{ color:var(--warn); font-weight:500; }
+
+    /* ============ MISC ============ */
+    pre.sql-out {
+      margin:.5rem 0 0; padding:.7rem;
+      background:var(--bg); border:1px solid var(--border);
+      border-radius:3px; max-height:300px; overflow:auto;
+      font-size:.65rem; color:var(--text2); white-space:pre;
+    }
+    .snap-error {
+      margin-top:.75rem; padding:.85rem 1rem;
+      background:#1a0f0f; border:1px solid #5a3030;
+      border-left:3px solid #aa3030; border-radius:3px;
+      font-size:.78rem; line-height:1.5; color:#ffcccc;
+    }
+    .snap-error pre {
+      white-space:pre-wrap; word-break:break-all;
+      margin:.5rem 0 0; padding:.5rem; background:#000;
+      border:1px solid #3a1a1a; border-radius:2px;
+      font-size:.7rem; color:#cc9999;
+      max-height:220px; overflow:auto;
+    }
+
+    ::-webkit-scrollbar { width:10px; height:10px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb {
+      background:var(--border-st); border-radius:5px;
+      border:2px solid var(--bg);
+    }
+    ::-webkit-scrollbar-thumb:hover { background:var(--dim); }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Person Counter <span class="sep">/</span>
-      <span class="cam">{{ camera }}</span>
-      <span class="sep">/</span>
-      <span class="crumb">Settings</span></h1>
+  <h1>
+    Person Counter <span class="sep">/</span>
+    <span class="cam">{{ camera }}</span>
+    <span class="sep">/</span>
+    <span class="crumb">Impostazioni</span>
+  </h1>
   <div class="actions">
     <a class="btn" href="/">← Dashboard</a>
-    <a class="btn" href="/admin">Admin</a>
     {% if auth_enabled %}<a class="btn" href="/logout">Logout</a>{% endif %}
   </div>
 </header>
 
-<main>
-  <div class="layout">
+<!-- ============ TABS BAR ============ -->
+<div class="tabs-bar" role="tablist">
+  <button class="tab active" data-tab="camera" role="tab">
+    <span class="ico">▣</span> Camera
+  </button>
+  <button class="tab" data-tab="advanced" role="tab">
+    <span class="ico">⚙</span> Avanzate
+  </button>
+  <button class="tab" data-tab="integrations" role="tab">
+    <span class="ico">⇄</span> Integrazioni
+  </button>
+  <button class="tab" data-tab="system" role="tab">
+    <span class="ico">▤</span> Sistema
+  </button>
+</div>
 
-    <!-- ============ CANVAS LATO SINISTRO ============ -->
+<form id="settings-form" onsubmit="return false">
+
+<!-- =================================================================
+     TAB 1: CAMERA — visualizzatore + linea/ROI + modalità conteggio
+     ================================================================= -->
+<section class="tab-panel active" data-panel="camera">
+
+  <div class="camera-split">
+
+    <!-- ---- SX: snapshot live + canvas ---- -->
     <div>
       <div class="section-title">
         <h2>Visualizzatore camera</h2>
@@ -285,8 +439,8 @@
           <canvas id="overlay"></canvas>
         </div>
         <div class="canvas-toolbar">
-          <button class="btn" id="btn-refresh">↻ Snapshot</button>
-          <button class="btn" id="btn-diag">Diagnostica</button>
+          <button class="btn" type="button" id="btn-refresh">↻ Snapshot</button>
+          <button class="btn" type="button" id="btn-diag">Diagnostica</button>
           <label style="display:flex; align-items:center; gap:.4rem;
                         color:var(--muted); font-size:.7rem;
                         text-transform:uppercase; letter-spacing:.08em">
@@ -296,73 +450,62 @@
           <span class="refresh" id="refresh-meta"></span>
           <div class="legend">
             <span><span class="sw line"></span>Linea</span>
-            <span><span class="sw margin"></span>Zona morta (margine)</span>
+            <span><span class="sw margin"></span>Zona morta</span>
             <span><span class="sw roi"></span>ROI</span>
           </div>
         </div>
 
-        <!-- pannello errore snapshot -->
-        <div id="snap-error" style="display:none; margin-top:.75rem;
-             padding:.85rem 1rem; background:#1a0f0f;
-             border:1px solid #5a3030; border-left:3px solid #aa3030;
-             border-radius:3px; font-size:.78rem; line-height:1.5;
-             color:#ffcccc">
+        <div id="snap-error" class="snap-error" style="display:none">
           <div id="snap-error-msg" style="font-weight:500"></div>
-          <div id="snap-error-hint" style="color:#cc8888; margin-top:.4rem;
-               font-size:.72rem"></div>
-          <details id="snap-error-detail" style="margin-top:.5rem;
-                   color:#aa6666; font-size:.7rem">
-            <summary style="cursor:pointer; user-select:none">
-              dettagli tecnici
-            </summary>
-            <pre id="snap-error-pre" style="white-space:pre-wrap;
-                 word-break:break-all; margin:.5rem 0 0;
-                 padding:.5rem; background:#000;
-                 border:1px solid #3a1a1a; border-radius:2px;
-                 font-size:.7rem; color:#cc9999;
-                 max-height:240px; overflow:auto"></pre>
+          <div id="snap-error-hint"
+               style="color:#cc8888; margin-top:.4rem; font-size:.72rem"></div>
+          <details style="margin-top:.5rem; color:#aa6666; font-size:.7rem">
+            <summary style="cursor:pointer">dettagli tecnici</summary>
+            <pre id="snap-error-pre"></pre>
           </details>
         </div>
       </div>
-
-      {% if not frigate_url_set %}
-      <div class="canvas-panel" style="margin-top:1rem; color:var(--muted);
-                                       font-size:.8rem; line-height:1.6">
-        Imposta <code style="background:var(--panel2); padding:.1rem .4rem;
-        border-radius:2px; border:1px solid var(--border)">FRIGATE_URL</code>
-        nell'<code style="background:var(--panel2); padding:.1rem .4rem;
-        border-radius:2px; border:1px solid var(--border)">environment</code>
-        del container (es. <code style="background:var(--panel2); padding:.1rem .4rem;
-        border-radius:2px; border:1px solid var(--border)">http://192.168.1.10:5000</code>)
-        per vedere lo snapshot live della camera e disegnare ROI/linea graficamente.
-      </div>
-      {% endif %}
     </div>
 
-    <!-- ============ FORM LATO DESTRO ============ -->
-    <form class="form-panel" id="settings-form" onsubmit="return false">
+    <!-- ---- DX: parametri visuali ---- -->
+    <div>
+      <div class="section-title">
+        <h2>Parametri visuali</h2>
+      </div>
 
-      <div class="group">
+      <div class="card">
         <h3>Camera</h3>
         <div class="field">
-          <label>Nome camera in Frigate
-            <span class="desc">deve coincidere con il nome in frigate.yml</span>
+          <label>Nome camera
+            <span class="desc">deve coincidere con frigate.yml</span>
           </label>
           <input type="text" name="CAMERA" id="camera-input"
                  list="camera-list" autocomplete="off">
           <datalist id="camera-list"></datalist>
         </div>
-        <div style="margin-top:-.25rem">
-          <button class="btn" type="button" id="btn-load-cameras"
-                  style="font-size:.65rem; padding:.35rem .7rem">
-            ↻ Carica camere da Frigate
+        <div class="row-actions">
+          <button class="btn btn-mini" type="button" id="btn-load-cameras">
+            ↻ Carica camere
           </button>
-          <span id="cameras-msg" style="color:var(--dim); font-size:.7rem;
-                margin-left:.5rem"></span>
+          <span id="cameras-msg"
+                style="color:var(--dim); font-size:.7rem; align-self:center"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Modalità conteggio</h3>
+        <div class="field">
+          <label>Algoritmo
+            <span class="desc">line_cross = robusto (raccomandato)</span>
+          </label>
+          <select name="COUNT_MODE">
+            <option value="line_cross">line_cross</option>
+            <option value="full_motion">full_motion</option>
+          </select>
         </div>
         <div class="field">
           <label>Direzione ingresso
-            <span class="desc">up = entra dal basso verso l'alto</span>
+            <span class="desc">up = entra dal basso</span>
           </label>
           <select name="ENTER_DIRECTION">
             <option value="up">up</option>
@@ -371,7 +514,7 @@
         </div>
         <div class="field">
           <label>Punto di tracking
-            <span class="desc">bottom = piedi · center = centro box</span>
+            <span class="desc">bottom = piedi · center = box</span>
           </label>
           <select name="POINT_MODE">
             <option value="bottom">bottom</option>
@@ -380,254 +523,344 @@
         </div>
       </div>
 
-      <div class="group">
-        <h3>Modalità conteggio</h3>
-        <div class="field">
-          <label>Algoritmo
-            <span class="desc">line_cross = richiede attraversamento netto (raccomandato)</span>
-          </label>
-          <select name="COUNT_MODE">
-            <option value="line_cross">line_cross</option>
-            <option value="full_motion">full_motion</option>
-          </select>
+      <div class="card">
+        <h3>Linea di attraversamento</h3>
+        <div class="help line">
+          <p>
+            La <strong>linea gialla</strong> è la soglia che la persona deve
+            attraversare per essere contata. La <strong>banda</strong>
+            attorno (margine) è una "zona morta": chi non la supera <em>da
+            un lato all'altro</em> non conta. Questo elimina i falsi positivi
+            di chi staziona davanti alla porta.
+          </p>
         </div>
-      </div>
-
-      <div class="group">
-        <h3>Linea di attraversamento (line_cross)</h3>
         <div class="field-range">
           <input type="range" name="LINE_Y" min="0" max="1" step="0.01">
-          <input type="number" name="LINE_Y_num" min="0" max="1" step="0.01">
+          <input type="number" name="LINE_Y_num"
+                 min="0" max="1" step="0.01">
         </div>
-        <div class="field"><label>LINE_Y <span class="desc">posizione verticale 0..1</span></label><span></span></div>
+        <div class="field">
+          <label>LINE_Y <span class="desc">posizione verticale 0..1</span></label>
+          <span></span>
+        </div>
         <div class="field-range">
           <input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01">
-          <input type="number" name="LINE_MARGIN_num" min="0" max="0.45" step="0.01">
+          <input type="number" name="LINE_MARGIN_num"
+                 min="0" max="0.45" step="0.01">
         </div>
-        <div class="field"><label>LINE_MARGIN <span class="desc">"zona morta": chi non la supera non conta</span></label><span></span></div>
+        <div class="field">
+          <label>LINE_MARGIN <span class="desc">ampiezza zona morta</span></label>
+          <span></span>
+        </div>
       </div>
 
-      <div class="group">
-        <h3>ROI — Region Of Interest</h3>
-        <details style="background:var(--panel2); border:1px solid var(--border);
-                        border-left:3px solid var(--roi); border-radius:3px;
-                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
-                        color:var(--text2)">
-          <summary style="cursor:pointer; user-select:none; color:var(--text);
-                          font-weight:500; letter-spacing:.03em">
-            Cos'è la ROI?
-          </summary>
-          <p style="margin:.6rem 0 0; color:var(--muted)">
-            È il <strong>rettangolo azzurro</strong> sull'immagine. Solo i movimenti
-            che avvengono <strong>dentro</strong> il rettangolo vengono considerati
-            per il conteggio: tutto quello che è fuori viene ignorato.
-          </p>
-          <p style="margin:.5rem 0 0; color:var(--muted)">
-            Esempio: se la camera inquadra la porta ma vede anche un corridoio
-            sullo sfondo, restringi la ROI alla sola zona della porta. Le persone
-            che passano in fondo al corridoio non verranno contate, perché i loro
-            punti finiscono fuori dal rettangolo.
-          </p>
-          <p style="margin:.5rem 0 0; color:var(--dim); font-size:.68rem">
-            Tutti i valori sono normalizzati 0..1 (0 = bordo sinistro/alto,
-            1 = bordo destro/basso dell'immagine).
-          </p>
-        </details>
+      <div class="card">
+        <h3>ROI</h3>
+        <div class="help roi">
+          <p><strong>ROI = Region Of Interest.</strong> È il rettangolo
+            azzurro: solo i movimenti che cadono <strong>dentro</strong>
+            vengono considerati. Quelli fuori (sfondo, marciapiede, finestre
+            laterali) sono ignorati.</p>
+          <details style="margin-top:.5rem">
+            <summary>Esempio</summary>
+            <p style="margin-top:.5rem">
+              Se la camera inquadra l'ingresso ma vede anche un corridoio
+              dietro, restringi la ROI alla sola area della porta: chi passa
+              in fondo al corridoio finisce fuori dal rettangolo e non viene
+              contato.
+            </p>
+          </details>
+        </div>
         <div class="field-range">
           <input type="range" name="MOTION_X1" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_X1_num" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_X1_num"
+                 min="0" max="1" step="0.01">
         </div>
-        <div class="field"><label>MOTION_X1 <span class="desc">bordo sinistro</span></label><span></span></div>
+        <div class="field">
+          <label>MOTION_X1 <span class="desc">bordo sinistro</span></label>
+          <span></span>
+        </div>
         <div class="field-range">
           <input type="range" name="MOTION_X2" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_X2_num" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_X2_num"
+                 min="0" max="1" step="0.01">
         </div>
-        <div class="field"><label>MOTION_X2 <span class="desc">bordo destro</span></label><span></span></div>
+        <div class="field">
+          <label>MOTION_X2 <span class="desc">bordo destro</span></label>
+          <span></span>
+        </div>
         <div class="field-range">
           <input type="range" name="MOTION_Y1" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_Y1_num" min="0" max="1" step="0.01">
+          <input type="number" name="MOTION_Y1_num"
+                 min="0" max="1" step="0.01">
         </div>
-        <div class="field"><label>MOTION_Y1 <span class="desc">bordo alto</span></label><span></span></div>
+        <div class="field">
+          <label>MOTION_Y1 <span class="desc">bordo alto</span></label>
+          <span></span>
+        </div>
         <div class="field-range">
           <input type="range" name="MOTION_Y2" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_Y2_num" min="0" max="1" step="0.01">
-        </div>
-        <div class="field"><label>MOTION_Y2 <span class="desc">bordo basso</span></label><span></span></div>
-      </div>
-
-      <div class="group">
-        <h3>Soglie movimento (full_motion)</h3>
-        <div class="field">
-          <label>MOTION_MIN_POINTS <span class="desc">punti minimi del track</span></label>
-          <input type="number" name="MOTION_MIN_POINTS" min="2" max="50" step="1">
+          <input type="number" name="MOTION_Y2_num"
+                 min="0" max="1" step="0.01">
         </div>
         <div class="field">
-          <label>MOTION_MIN_DELTA_Y <span class="desc">spostamento Y minimo</span></label>
-          <input type="number" name="MOTION_MIN_DELTA_Y" min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_MIN_SPAN_Y <span class="desc">escursione Y minima</span></label>
-          <input type="number" name="MOTION_MIN_SPAN_Y" min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_MIN_NET_RATIO <span class="desc">delta/span minimo</span></label>
-          <input type="number" name="MOTION_MIN_NET_RATIO" min="0" max="1" step="0.01">
+          <label>MOTION_Y2 <span class="desc">bordo basso</span></label>
+          <span></span>
         </div>
       </div>
 
-      <div class="group">
-        <h3>Tracking</h3>
-        <div class="field">
-          <label>JITTER_DISTANCE <span class="desc">filtra micro-movimenti</span></label>
-          <input type="number" name="JITTER_DISTANCE" min="0" max="0.2" step="0.005">
-        </div>
-        <div class="field">
-          <label>TRACK_TTL <span class="desc">sec. di vita track</span></label>
-          <input type="number" name="TRACK_TTL" min="1" max="300" step="1">
-        </div>
-        <div class="field">
-          <label>TRACK_POINTS_MAX <span class="desc">cap punti per track</span></label>
-          <input type="number" name="TRACK_POINTS_MAX" min="10" max="2000" step="10">
-        </div>
-      </div>
+    </div>
+  </div>
+</section>
 
-      <!-- ============ MQTT ============ -->
-      <div class="group">
-        <h3>MQTT broker <span style="color:var(--dim); font-weight:400;
-          text-transform:none; letter-spacing:0">(richiede restart)</span></h3>
-        <div class="field">
-          <label>MQTT_HOST <span class="desc">hostname / IP del broker Frigate</span></label>
-          <input type="text" name="MQTT_HOST">
-        </div>
-        <div class="field">
-          <label>MQTT_PORT</label>
-          <input type="number" name="MQTT_PORT" min="1" max="65535">
-        </div>
-        <div class="field">
-          <label>MQTT_USER <span class="desc">vuoto = no auth</span></label>
-          <input type="text" name="MQTT_USER" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>MQTT_PASS</label>
-          <input type="password" name="MQTT_PASS" autocomplete="new-password"
-                 placeholder="•••">
-        </div>
-      </div>
 
-      <!-- ============ FRIGATE ============ -->
-      <div class="group">
-        <h3>Frigate API</h3>
-        <div class="field">
-          <label>FRIGATE_URL <span class="desc">es. http://frigate:5000</span></label>
-          <input type="url" name="FRIGATE_URL">
-        </div>
-        <div class="field">
-          <label>SNAPSHOT_REFRESH_SEC <span class="desc">intervallo auto-refresh</span></label>
-          <input type="number" name="SNAPSHOT_REFRESH_SEC" min="0.5" max="60" step="0.5">
-        </div>
-      </div>
+<!-- =================================================================
+     TAB 2: AVANZATE — soglie movimento + tracking
+     ================================================================= -->
+<section class="tab-panel" data-panel="advanced">
 
-      <!-- ============ POSTGRES ============ -->
-      <div class="group">
-        <h3>PostgreSQL <span id="pg-status-badge"
-              style="font-size:.6rem; padding:.15rem .5rem; border-radius:2px;
-                     vertical-align:middle; margin-left:.4rem;
-                     background:var(--panel3); color:var(--dim);
-                     border:1px solid var(--border)">non connesso</span></h3>
-        <details style="background:var(--panel2); border:1px solid var(--border);
-                        border-left:3px solid #4fc3f7; border-radius:3px;
-                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
-                        color:var(--text2)">
-          <summary style="cursor:pointer; user-select:none; color:var(--text);
-                          font-weight:500">Cos'è e come si usa</summary>
-          <p style="margin:.6rem 0 0; color:var(--muted)">
-            Storage esterno per gli eventi storici. Se lo configuri, ogni
-            ingresso/uscita finisce in tabella e la dashboard storica diventa
-            molto più rapida con grandi volumi. Lascia i campi vuoti per
-            restare sul solo file <code style="background:var(--bg);
-            padding:.05rem .3rem; border-radius:2px;
-            border:1px solid var(--border)">events.jsonl</code> locale.
-          </p>
-          <p style="margin:.5rem 0 0; color:var(--muted)">
-            La tabella viene creata automaticamente al primo connect se
-            l'utente DB ha permessi di CREATE. In alternativa,
-            <strong>clicca "Mostra SQL"</strong> qui sotto per copiarlo
-            ed eseguirlo manualmente.
-          </p>
-        </details>
-        <div class="field">
-          <label>DB_HOST</label>
-          <input type="text" name="DB_HOST" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>DB_PORT</label>
-          <input type="number" name="DB_PORT" min="1" max="65535">
-        </div>
-        <div class="field">
-          <label>DB_NAME</label>
-          <input type="text" name="DB_NAME" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>DB_USER</label>
-          <input type="text" name="DB_USER" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>DB_PASS</label>
-          <input type="password" name="DB_PASS" autocomplete="new-password"
-                 placeholder="•••">
-        </div>
-        <div class="field">
-          <label>DB_SCHEMA</label>
-          <input type="text" name="DB_SCHEMA" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>DB_TABLE</label>
-          <input type="text" name="DB_TABLE" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>DB_SSLMODE</label>
-          <select name="DB_SSLMODE">
-            <option value="disable">disable</option>
-            <option value="allow">allow</option>
-            <option value="prefer">prefer</option>
-            <option value="require">require</option>
-            <option value="verify-ca">verify-ca</option>
-            <option value="verify-full">verify-full</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem">
-          <button class="btn" type="button" id="btn-db-test"
-                  style="font-size:.65rem; padding:.4rem .8rem">
-            ↻ Testa connessione
-          </button>
-          <button class="btn" type="button" id="btn-db-sql"
-                  style="font-size:.65rem; padding:.4rem .8rem">
-            ▤ Mostra SQL
-          </button>
-        </div>
-        <div id="db-feedback" style="margin-top:.5rem; font-size:.72rem;
-             color:var(--muted); line-height:1.5; word-break:break-word"></div>
-      </div>
+  <div class="section-title">
+    <h2>Parametri avanzati</h2>
+    <span class="hint">
+      modifica solo se sai cosa stai facendo
+    </span>
+  </div>
 
-      <!-- ============ WEBHOOK ============ -->
-      <div class="group">
-        <h3>Webhook</h3>
-        <details style="background:var(--panel2); border:1px solid var(--border);
-                        border-left:3px solid #ffeb3b; border-radius:3px;
-                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
-                        color:var(--text2)">
-          <summary style="cursor:pointer; user-select:none; color:var(--text);
-                          font-weight:500">Cos'è il webhook</summary>
-          <p style="margin:.6rem 0 0; color:var(--muted)">
-            Ogni volta che il sistema conta un ingresso o un'uscita, fa una
-            <strong>HTTP POST</strong> al tuo URL con un JSON che contiene
-            evento, camera, timestamp, occupancy, totali, coordinate. Utile
-            per integrarsi con Home Assistant, Node-RED, Slack, n8n, ecc.
-          </p>
-          <pre style="margin:.5rem 0 0; padding:.5rem; background:var(--bg);
-                      border:1px solid var(--border); border-radius:2px;
-                      font-size:.65rem; color:var(--text2);
-                      overflow-x:auto">{
+  <div class="card">
+    <h3>Soglie movimento (modalità full_motion)</h3>
+    <div class="help">
+      <p>
+        Questi parametri sono usati <strong>solo</strong> dalla modalità
+        <code>full_motion</code>. In modalità <code>line_cross</code> (default)
+        vengono ignorati eccetto <code>MOTION_MIN_POINTS</code>.
+      </p>
+    </div>
+    <div class="field">
+      <label>MOTION_MIN_POINTS
+        <span class="desc">punti minimi del track</span></label>
+      <input type="number" name="MOTION_MIN_POINTS" min="2" max="50" step="1">
+    </div>
+    <div class="field">
+      <label>MOTION_MIN_DELTA_Y
+        <span class="desc">spostamento Y minimo</span></label>
+      <input type="number" name="MOTION_MIN_DELTA_Y"
+             min="0" max="1" step="0.01">
+    </div>
+    <div class="field">
+      <label>MOTION_MIN_SPAN_Y
+        <span class="desc">escursione Y minima</span></label>
+      <input type="number" name="MOTION_MIN_SPAN_Y"
+             min="0" max="1" step="0.01">
+    </div>
+    <div class="field">
+      <label>MOTION_MIN_NET_RATIO
+        <span class="desc">delta/span minimo (filtra avanti/indietro)</span></label>
+      <input type="number" name="MOTION_MIN_NET_RATIO"
+             min="0" max="1" step="0.01">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Tracking</h3>
+    <div class="field">
+      <label>JITTER_DISTANCE
+        <span class="desc">filtra micro-movimenti</span></label>
+      <input type="number" name="JITTER_DISTANCE"
+             min="0" max="0.2" step="0.005">
+    </div>
+    <div class="field">
+      <label>TRACK_TTL
+        <span class="desc">sec. di vita di un track inattivo</span></label>
+      <input type="number" name="TRACK_TTL" min="1" max="300" step="1">
+    </div>
+    <div class="field">
+      <label>TRACK_POINTS_MAX
+        <span class="desc">cap punti per track</span></label>
+      <input type="number" name="TRACK_POINTS_MAX"
+             min="10" max="2000" step="10">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Frame / zona Frigate</h3>
+    <div class="field">
+      <label>FRAME_W
+        <span class="desc">larghezza frame in pixel</span></label>
+      <input type="number" name="FRAME_W" min="320" max="7680" step="1">
+    </div>
+    <div class="field">
+      <label>FRAME_H
+        <span class="desc">altezza frame in pixel</span></label>
+      <input type="number" name="FRAME_H" min="240" max="4320" step="1">
+    </div>
+    <div class="field">
+      <label>REQUIRED_ZONE
+        <span class="desc">conta solo eventi in questa zona Frigate (vuoto = tutte)</span></label>
+      <input type="text" name="REQUIRED_ZONE" autocomplete="off">
+    </div>
+  </div>
+
+</section>
+
+
+<!-- =================================================================
+     TAB 3: INTEGRAZIONI — MQTT, Frigate, Postgres, Webhook
+     ================================================================= -->
+<section class="tab-panel" data-panel="integrations">
+
+  <div class="section-title">
+    <h2>Integrazioni esterne</h2>
+  </div>
+
+  <!-- ---- MQTT ---- -->
+  <div class="card">
+    <h3>MQTT broker <span class="restart-tag">richiede restart</span></h3>
+    <div class="help">
+      <p>
+        Il counter si connette al broker MQTT del Frigate e si sottoscrive
+        al topic <code>frigate/events</code>. Pubblica anche i totali su
+        <code>counter/&lt;camera&gt;/enter</code>,
+        <code>/exit</code> e <code>/occupancy</code> (retained).
+      </p>
+    </div>
+    <div class="field">
+      <label>MQTT_HOST
+        <span class="desc">IP o hostname del broker</span></label>
+      <input type="text" name="MQTT_HOST" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>MQTT_PORT</label>
+      <input type="number" name="MQTT_PORT" min="1" max="65535">
+    </div>
+    <div class="field">
+      <label>MQTT_USER
+        <span class="desc">vuoto = no auth</span></label>
+      <input type="text" name="MQTT_USER" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>MQTT_PASS</label>
+      <input type="password" name="MQTT_PASS"
+             autocomplete="new-password" placeholder="•••">
+    </div>
+  </div>
+
+  <!-- ---- FRIGATE ---- -->
+  <div class="card">
+    <h3>Frigate API</h3>
+    <div class="help">
+      <p>
+        Serve solo per lo <strong>snapshot live</strong> nel tab Camera.
+        Senza, tutto il resto funziona ma non vedi l'immagine.
+      </p>
+      <p style="margin-top:.4rem">
+        Se Frigate è in un altro container dello stesso compose, usa il
+        nome del servizio Docker (es. <code>http://frigate:5000</code>).
+      </p>
+    </div>
+    <div class="field">
+      <label>FRIGATE_URL
+        <span class="desc">base URL senza trailing slash</span></label>
+      <input type="url" name="FRIGATE_URL"
+             placeholder="http://frigate:5000">
+    </div>
+    <div class="field">
+      <label>SNAPSHOT_REFRESH_SEC
+        <span class="desc">intervallo auto-refresh</span></label>
+      <input type="number" name="SNAPSHOT_REFRESH_SEC"
+             min="0.5" max="60" step="0.5">
+    </div>
+  </div>
+
+  <!-- ---- POSTGRES ---- -->
+  <div class="card">
+    <h3>PostgreSQL
+      <span class="pg-badge" id="pg-status-badge">non connesso</span>
+    </h3>
+    <div class="help">
+      <p>
+        Storage esterno per gli eventi storici. Con Postgres attivo la
+        dashboard storica diventa molto più rapida; senza, viene usato
+        solo il file <code>events.jsonl</code>.
+      </p>
+      <details style="margin-top:.4rem">
+        <summary>Come setupparlo</summary>
+        <p style="margin-top:.5rem">
+          1. Compila i campi qui sotto.<br>
+          2. Clicca <strong>↻ Testa connessione</strong>: verifica che l'app
+          si colleghi e ti dice se la tabella esiste.<br>
+          3. Se la tabella manca e l'utente DB ha permessi
+          <code>CREATE</code>, viene creata in automatico al salvataggio.
+          Altrimenti clicca <strong>▤ Mostra SQL</strong>, copia ed esegui
+          come superuser.
+        </p>
+      </details>
+    </div>
+    <div class="field">
+      <label>DB_HOST</label>
+      <input type="text" name="DB_HOST" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>DB_PORT</label>
+      <input type="number" name="DB_PORT" min="1" max="65535">
+    </div>
+    <div class="field">
+      <label>DB_NAME</label>
+      <input type="text" name="DB_NAME" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>DB_USER</label>
+      <input type="text" name="DB_USER" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>DB_PASS</label>
+      <input type="password" name="DB_PASS"
+             autocomplete="new-password" placeholder="•••">
+    </div>
+    <div class="field">
+      <label>DB_SCHEMA</label>
+      <input type="text" name="DB_SCHEMA" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>DB_TABLE</label>
+      <input type="text" name="DB_TABLE" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>DB_SSLMODE</label>
+      <select name="DB_SSLMODE">
+        <option value="disable">disable</option>
+        <option value="allow">allow</option>
+        <option value="prefer">prefer</option>
+        <option value="require">require</option>
+        <option value="verify-ca">verify-ca</option>
+        <option value="verify-full">verify-full</option>
+      </select>
+    </div>
+    <div class="row-actions">
+      <button class="btn btn-mini" type="button" id="btn-db-test">
+        ↻ Testa connessione
+      </button>
+      <button class="btn btn-mini" type="button" id="btn-db-sql">
+        ▤ Mostra SQL
+      </button>
+    </div>
+    <div id="db-feedback" class="feedback"></div>
+  </div>
+
+  <!-- ---- WEBHOOK ---- -->
+  <div class="card">
+    <h3>Webhook</h3>
+    <div class="help">
+      <p>
+        Ad ogni <code>enter</code>/<code>exit</code> il counter fa una HTTP
+        POST al tuo URL con un JSON contenente evento, camera, timestamp,
+        occupancy, totali, coordinate. Compatibile con Home Assistant,
+        Node-RED, Slack, n8n, ecc.
+      </p>
+      <details style="margin-top:.4rem">
+        <summary>Esempio di payload</summary>
+        <pre style="margin:.5rem 0 0; padding:.5rem; background:var(--bg);
+                    border:1px solid var(--border); border-radius:2px;
+                    font-size:.65rem; color:var(--text2); overflow-x:auto">{
   "event": "enter",
   "camera": "ingresso",
   "ts": 1716470000.123,
@@ -641,181 +874,207 @@
   "end":   {"x": 0.43, "y": 0.88},
   "reason": "..."
 }</pre>
-        </details>
-        <div class="field">
-          <label>Abilitato</label>
-          <select name="WEBHOOK_ENABLED">
-            <option value="false">no</option>
-            <option value="true">sì</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>WEBHOOK_URL</label>
-          <input type="url" name="WEBHOOK_URL"
-                 placeholder="https://example.com/hook">
-        </div>
-        <div class="field" style="grid-template-columns:1fr">
-          <label>WEBHOOK_HEADERS <span class="desc">JSON di header extra (es. Authorization, X-Token)</span></label>
-        </div>
-        <textarea name="WEBHOOK_HEADERS" rows="3"
-                  placeholder='{"Authorization": "Bearer abc123"}'
-                  style="width:100%; background:var(--panel2); color:var(--text);
-                         border:1px solid var(--border); border-radius:3px;
-                         padding:.5rem .6rem; font-family:inherit; font-size:.75rem;
-                         resize:vertical"></textarea>
-        <div class="field">
-          <label>WEBHOOK_TIMEOUT <span class="desc">secondi</span></label>
-          <input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5">
-        </div>
-        <div class="field">
-          <label>WEBHOOK_RETRY <span class="desc">retry per errori 5xx / rete</span></label>
-          <input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1">
-        </div>
-        <div style="display:flex; gap:.5rem; margin-top:.5rem">
-          <button class="btn" type="button" id="btn-webhook-test"
-                  style="font-size:.65rem; padding:.4rem .8rem">
-            ↻ Invia evento di test
-          </button>
-        </div>
-        <div id="webhook-feedback" style="margin-top:.5rem; font-size:.72rem;
-             color:var(--muted); line-height:1.5; word-break:break-word"></div>
-      </div>
-
-      <div class="actions-bar">
-        <span class="feedback" id="feedback"></span>
-        <button class="btn" type="button" id="btn-reset">Annulla</button>
-        <button class="btn primary" type="button" id="btn-save">Salva</button>
-      </div>
-    </form>
-
+      </details>
+    </div>
+    <div class="field">
+      <label>Abilitato</label>
+      <select name="WEBHOOK_ENABLED">
+        <option value="false">no</option>
+        <option value="true">sì</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>WEBHOOK_URL</label>
+      <input type="url" name="WEBHOOK_URL"
+             placeholder="https://example.com/hook">
+    </div>
+    <div class="field full">
+      <label>WEBHOOK_HEADERS
+        <span class="desc">JSON di header extra (Authorization, X-Token, ecc.)</span></label>
+    </div>
+    <textarea name="WEBHOOK_HEADERS" rows="3"
+              placeholder='{"Authorization": "Bearer xyz"}'></textarea>
+    <div class="field">
+      <label>WEBHOOK_TIMEOUT
+        <span class="desc">secondi</span></label>
+      <input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5">
+    </div>
+    <div class="field">
+      <label>WEBHOOK_RETRY
+        <span class="desc">retry per errori 5xx/network</span></label>
+      <input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1">
+    </div>
+    <div class="row-actions">
+      <button class="btn btn-mini" type="button" id="btn-webhook-test">
+        ↻ Invia evento di test
+      </button>
+    </div>
+    <div id="webhook-feedback" class="feedback"></div>
   </div>
 
-  <!-- ============ SISTEMA ============ -->
-  <div class="system-block">
-    <div class="section-title">
-      <h2>Sistema</h2>
+</section>
+
+
+<!-- =================================================================
+     TAB 4: SISTEMA — stato + reset
+     ================================================================= -->
+<section class="tab-panel" data-panel="system">
+
+  <div class="section-title">
+    <h2>Stato</h2>
+  </div>
+  <div class="status-grid">
+    <div class="stat">
+      <div class="lbl">Entrate cumulative</div>
+      <div class="val">{{ snapshot.enter }}</div>
     </div>
-    <div class="status-grid">
-      <div class="stat">
-        <div class="lbl">Entrate cumulative</div>
-        <div class="val">{{ snapshot.enter }}</div>
-      </div>
-      <div class="stat">
-        <div class="lbl">Uscite cumulative</div>
-        <div class="val">{{ snapshot.exit }}</div>
-      </div>
-      <div class="stat">
-        <div class="lbl">Presenti ora</div>
-        <div class="val">{{ snapshot.occupancy }}</div>
-      </div>
-      <div class="stat">
-        <div class="lbl">Eventi storici</div>
-        <div class="val">{{ stats.events_count or 0 }}</div>
-        <div class="sub">in {{ stats.days_count or 0 }} giorni distinti</div>
-      </div>
-      <div class="stat">
-        <div class="lbl">Storage</div>
-        <div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
-        {% if stats.jsonl_size %}
-          <div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size / 1024) }} KB</div>
-        {% endif %}
-      </div>
-      <div class="stat">
-        <div class="lbl">Ultimo evento</div>
-        <div class="val dim">
-          {% if stats.last_event %}
-            {{ stats.last_event[:19].replace('T', ' ') }}
-          {% else %}—{% endif %}
-        </div>
+    <div class="stat">
+      <div class="lbl">Uscite cumulative</div>
+      <div class="val">{{ snapshot.exit }}</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Presenti ora</div>
+      <div class="val">{{ snapshot.occupancy }}</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Eventi storici</div>
+      <div class="val">{{ stats.events_count or 0 }}</div>
+      <div class="sub">in {{ stats.days_count or 0 }} giorni distinti</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Storage</div>
+      <div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
+      {% if stats.jsonl_size %}
+        <div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size / 1024) }} KB</div>
+      {% endif %}
+    </div>
+    <div class="stat">
+      <div class="lbl">Ultimo evento</div>
+      <div class="val dim">
+        {% if stats.last_event %}
+          {{ stats.last_event[:19].replace('T', ' ') }}
+        {% else %}—{% endif %}
       </div>
     </div>
   </div>
 
-  <!-- ============ RESET ============ -->
-  <div class="reset-block">
-    <div class="section-title">
-      <h2>Reset</h2>
-    </div>
-
-    <div class="action safe">
-      <div class="desc">
-        <h3>Reset cumulativi</h3>
-        <p>
-          Azzera <code>entrate</code>, <code>uscite</code> e <code>presenti</code>.
-          <strong>Lo storico degli eventi resta intatto</strong> — utile se hai
-          appena montato la camera e vuoi ripartire da zero senza perdere i log.
-        </p>
-        <small>Operazione reversibile? No, i contatori tornano a 0.</small>
-      </div>
-      <div class="ctrl">
-        <button class="btn" type="button" id="btn-reset-counters">
-          Azzera contatori
-        </button>
-      </div>
-    </div>
-
-    <div class="action warn">
-      <div class="desc">
-        <h3>Reset statistiche di un giorno</h3>
-        <p>
-          Cancella <strong>tutti gli eventi di un singolo giorno</strong> dallo
-          storico (sia da Postgres sia dal file <code>events.jsonl</code>).
-          I contatori cumulativi vengono corretti sottraendo gli enter/exit
-          del giorno cancellato.
-        </p>
-        <small>Usa quando vuoi rimuovere falsi positivi accumulati in una giornata.</small>
-      </div>
-      <div class="ctrl">
-        <input type="date" id="reset-day-input"
-               value="{{ today_iso }}" max="{{ today_iso }}">
-        <button class="btn warn" type="button" id="btn-reset-day">
-          Cancella giorno
-        </button>
-      </div>
-    </div>
-
-    <div class="action danger">
-      <div class="desc">
-        <h3>Reset totale (wipe)</h3>
-        <p>
-          <strong>Cancella TUTTO lo storico</strong> + azzera i contatori.
-          Eventi rimossi sia dal file JSON sia dalla tabella Postgres.
-          Operazione <strong>irreversibile</strong>.
-        </p>
-        <small>Da usare solo se hai esportato i dati o stai cambiando configurazione completamente.</small>
-      </div>
-      <div class="ctrl">
-        <button class="btn danger" type="button" id="btn-reset-all">
-          Wipe totale
-        </button>
-      </div>
-    </div>
-
-    <div id="reset-feedback" class="reset-feedback"></div>
+  <div class="section-title">
+    <h2>Reset</h2>
   </div>
 
-</main>
+  <div class="action safe">
+    <div class="desc">
+      <h4>Reset cumulativi</h4>
+      <p>
+        Azzera <code>entrate</code>, <code>uscite</code> e
+        <code>presenti</code>. <strong>Lo storico degli eventi resta
+        intatto</strong>.
+      </p>
+      <small>Utile se hai appena montato la camera e vuoi partire da zero.</small>
+    </div>
+    <div class="ctrl">
+      <button class="btn" type="button" id="btn-reset-counters">
+        Azzera contatori
+      </button>
+    </div>
+  </div>
+
+  <div class="action warn">
+    <div class="desc">
+      <h4>Reset statistiche di un giorno</h4>
+      <p>
+        Cancella tutti gli eventi di un singolo giorno (sia da Postgres sia
+        dal file JSON). I cumulativi vengono corretti sottraendo gli
+        enter/exit del giorno cancellato.
+      </p>
+      <small>Per rimuovere falsi positivi accumulati in una giornata.</small>
+    </div>
+    <div class="ctrl">
+      <input type="date" id="reset-day-input"
+             value="{{ today_iso }}" max="{{ today_iso }}">
+      <button class="btn warn" type="button" id="btn-reset-day">
+        Cancella giorno
+      </button>
+    </div>
+  </div>
+
+  <div class="action danger">
+    <div class="desc">
+      <h4>Reset totale (wipe)</h4>
+      <p>
+        <strong>Cancella TUTTO lo storico</strong> + azzera i contatori.
+        Eventi rimossi sia dal JSON sia da Postgres. <strong>Irreversibile.</strong>
+      </p>
+      <small>Da usare solo se hai esportato i dati o stai ripartendo da zero.</small>
+    </div>
+    <div class="ctrl">
+      <button class="btn danger" type="button" id="btn-reset-all">
+        Wipe totale
+      </button>
+    </div>
+  </div>
+
+  <div id="reset-feedback" class="feedback"
+       style="font-size:.8rem; padding:1rem 1.25rem;
+              background:var(--panel2); border:1px solid var(--border-st);
+              border-left:3px solid var(--accent); border-radius:3px;
+              margin-top:1.5rem"></div>
+
+</section>
+
+
+<!-- ============ SAVE BAR (sticky, visibile in tutti i tab) ============ -->
+<div class="save-bar">
+  <span class="save-feedback" id="feedback"></span>
+  <button class="btn" type="button" id="btn-cancel">Annulla modifiche</button>
+  <button class="btn primary" type="button" id="btn-save">Salva tutto</button>
+</div>
+
+</form>
 
 <script>
-  // ===========================================================
+  // ============================================================
+  //  TAB SWITCHING
+  // ============================================================
+  const TAB_KEY = 'counter-settings-tab';
+  function activateTab(name) {
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.panel === name);
+    });
+    try { localStorage.setItem(TAB_KEY, name); } catch (_) {}
+    // ridimensiona canvas quando torno su camera
+    if (name === 'camera') resizeCanvas();
+  }
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => activateTab(t.dataset.tab));
+  });
+  try {
+    const saved = localStorage.getItem(TAB_KEY);
+    if (saved) activateTab(saved);
+  } catch (_) {}
+
+  // ============================================================
   //  STATO CONDIVISO
-  // ===========================================================
+  // ============================================================
   const initial = {{ current|tojson }};
-  let s = Object.assign({}, initial);  // working copy
+  let s = Object.assign({}, initial);
   const REFRESH_SEC = {{ snapshot_refresh }};
   const FRIGATE_OK = {{ 'true' if frigate_url_set else 'false' }};
-
-  // ===========================================================
-  //  FORM ↔ STATE
-  // ===========================================================
   const form = document.getElementById('settings-form');
 
   function setFormFromState() {
     for (const k of Object.keys(s)) {
       const el = form.elements[k];
       if (el) {
-        el.value = s[k];
-        // sincronizza il number gemello degli slider
+        // password: lascia placeholder se mascherato
+        if (el.type === 'password' && s[k] === '***') {
+          el.value = '';
+        } else {
+          el.value = s[k];
+        }
         const numEl = form.elements[k + '_num'];
         if (numEl) numEl.value = s[k];
       }
@@ -827,14 +1086,21 @@
     for (const k of Object.keys(s)) {
       const el = form.elements[k];
       if (!el) continue;
-      const v = el.value;
-      if (v === '' || v === null || v === undefined) continue;
-      if (typeof initial[k] === 'number') s[k] = parseFloat(v);
-      else s[k] = v;
+      let v = el.value;
+      // password vuota = "***" (non cambiare)
+      if (el.type === 'password' && v === '') v = '***';
+      if (v === null || v === undefined) continue;
+      if (typeof initial[k] === 'number') {
+        const f = parseFloat(v);
+        if (!isNaN(f)) s[k] = f;
+      } else if (typeof initial[k] === 'boolean') {
+        s[k] = (v === 'true' || v === true);
+      } else {
+        s[k] = v;
+      }
     }
   }
 
-  // sync slider <-> number gemello + redraw on every change
   form.addEventListener('input', (e) => {
     const t = e.target;
     if (!t.name) return;
@@ -850,19 +1116,20 @@
     drawOverlay();
   });
 
-  // ===========================================================
-  //  CANVAS OVERLAY (ROI + LINEA + MARGINE)
-  // ===========================================================
-  const wrap = document.getElementById('canvas-wrap');
+  // ============================================================
+  //  CANVAS OVERLAY
+  // ============================================================
+  const wrap   = document.getElementById('canvas-wrap');
   const canvas = document.getElementById('overlay');
-  const ctx = canvas.getContext('2d');
+  const ctx    = canvas.getContext('2d');
 
   function resizeCanvas() {
+    if (!wrap.offsetParent) return;   // tab non visibile
     const rect = wrap.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
+    canvas.width  = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    canvas.style.width = rect.width + 'px';
+    canvas.style.width  = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawOverlay();
@@ -871,16 +1138,15 @@
 
   function drawOverlay() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
     ctx.clearRect(0, 0, w, h);
 
-    // ---- zona morta (margine) ----
     const lineY = s.LINE_Y * h;
-    const mTopY = (s.LINE_Y - s.LINE_MARGIN) * h;
-    const mBotY = (s.LINE_Y + s.LINE_MARGIN) * h;
+    const mTop = (s.LINE_Y - s.LINE_MARGIN) * h;
+    const mBot = (s.LINE_Y + s.LINE_MARGIN) * h;
     ctx.fillStyle = 'rgba(255,235,59,.10)';
-    ctx.fillRect(0, mTopY, w, mBotY - mTopY);
+    ctx.fillRect(0, mTop, w, mBot - mTop);
 
-    // ---- ROI ----
     const x1 = s.MOTION_X1 * w, y1 = s.MOTION_Y1 * h;
     const x2 = s.MOTION_X2 * w, y2 = s.MOTION_Y2 * h;
     ctx.fillStyle = 'rgba(79,195,247,.06)';
@@ -890,47 +1156,38 @@
     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     ctx.setLineDash([]);
 
-    // ---- linea di attraversamento ----
     ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(w, lineY); ctx.stroke();
-    // bordi margine tratteggiati
     ctx.strokeStyle = 'rgba(255,235,59,.6)'; ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(0, mTopY); ctx.lineTo(w, mTopY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, mBotY); ctx.lineTo(w, mBotY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, mTop); ctx.lineTo(w, mTop); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, mBot); ctx.lineTo(w, mBot); ctx.stroke();
     ctx.setLineDash([]);
 
-    // ---- handle agli angoli ROI ----
     ctx.fillStyle = '#4fc3f7';
     [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y]) => {
       ctx.fillRect(x-5, y-5, 10, 10);
     });
-
-    // ---- handle al centro della linea ----
     ctx.fillStyle = '#ffeb3b';
     ctx.fillRect(w/2 - 25, lineY - 4, 50, 8);
 
-    // ---- etichette ----
-    ctx.fillStyle = '#ffeb3b'; ctx.font = '11px "Roboto Mono", monospace';
+    ctx.fillStyle = '#ffeb3b';
+    ctx.font = '11px "Roboto Mono", monospace';
     ctx.fillText('LINE Y=' + s.LINE_Y.toFixed(2), 8, lineY - 6);
     ctx.fillStyle = '#4fc3f7';
     ctx.fillText('ROI', x1 + 5, y1 + 14);
   }
 
-  // ---- drag interattivo ----
-  let drag = null;   // {type:'line'|'roi-tl'|'roi-tr'|'roi-bl'|'roi-br'|'roi-l'|'roi-r'|'roi-t'|'roi-b'}
+  let drag = null;
   function pickHandle(px, py) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const x1 = s.MOTION_X1*w, y1 = s.MOTION_Y1*h;
     const x2 = s.MOTION_X2*w, y2 = s.MOTION_Y2*h;
     const lineY = s.LINE_Y*h;
     const H = 10;
-
-    // handle centrale linea (banda di 8px)
     if (Math.abs(py - lineY) <= 6 && px > w/2 - 30 && px < w/2 + 30)
       return 'line-handle';
     if (Math.abs(py - lineY) <= 4) return 'line';
-
     if (Math.abs(px-x1)<H && Math.abs(py-y1)<H) return 'roi-tl';
     if (Math.abs(px-x2)<H && Math.abs(py-y1)<H) return 'roi-tr';
     if (Math.abs(px-x1)<H && Math.abs(py-y2)<H) return 'roi-bl';
@@ -941,7 +1198,6 @@
     if (Math.abs(py-y2)<H && px>x1 && px<x2) return 'roi-b';
     return null;
   }
-
   function cursorFor(h){
     if (!h) return 'crosshair';
     if (h.startsWith('line')) return 'ns-resize';
@@ -951,7 +1207,6 @@
     if (h === 'roi-t' || h === 'roi-b') return 'ns-resize';
     return 'crosshair';
   }
-
   function evtPos(e){
     const r = canvas.getBoundingClientRect();
     return [e.clientX - r.left, e.clientY - r.top];
@@ -971,7 +1226,6 @@
     }
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const nx = clamp(px/w), ny = clamp(py/h);
-
     if (drag.startsWith('line')) {
       s.LINE_Y = ny;
     } else {
@@ -984,13 +1238,13 @@
   });
   window.addEventListener('mouseup', () => drag = null);
 
-  // ===========================================================
+  // ============================================================
   //  SNAPSHOT
-  // ===========================================================
+  // ============================================================
   const img = document.getElementById('snap');
   const refreshMeta = document.getElementById('refresh-meta');
   const autoCb = document.getElementById('auto-refresh');
-  let timer = null;
+  let snapTimer = null;
 
   const errBox  = document.getElementById('snap-error');
   const errMsg  = document.getElementById('snap-error-msg');
@@ -1009,9 +1263,7 @@
       errPre.textContent  = fallbackText || '';
     }
   }
-  function clearSnapError() {
-    errBox.style.display = 'none';
-  }
+  function clearSnapError() { errBox.style.display = 'none'; }
 
   async function loadSnapshot() {
     if (!FRIGATE_OK) return;
@@ -1024,7 +1276,7 @@
           try { payload = await r.json(); } catch (_) {}
         }
         if (payload) showSnapError(payload);
-        else         showSnapError(null, 'HTTP ' + r.status);
+        else showSnapError(null, 'HTTP ' + r.status);
         refreshMeta.textContent = '✗ HTTP ' + r.status;
         return;
       }
@@ -1039,25 +1291,30 @@
       refreshMeta.textContent = '✗ ' + e.message;
     }
   }
+  img.addEventListener('load', resizeCanvas);
+
+  function startAuto() {
+    if (snapTimer) clearInterval(snapTimer);
+    if (autoCb.checked && FRIGATE_OK) {
+      snapTimer = setInterval(loadSnapshot, REFRESH_SEC * 1000);
+    }
+  }
+  autoCb.addEventListener('change', startAuto);
+  document.getElementById('btn-refresh').addEventListener('click', loadSnapshot);
 
   document.getElementById('btn-diag').addEventListener('click', async () => {
     refreshMeta.textContent = 'diagnostica in corso…';
     try {
       const r = await fetch('/api/snapshot/diag');
       const d = await r.json();
-      // costruiamo un messaggio leggibile dai 3 steps
       let msg = d.ok ? '✓ Frigate raggiungibile' : '✗ Diagnostica fallita';
       let hint = '';
       for (const st of (d.steps || [])) {
-        if (st.error) {
-          msg = `✗ ${st.step}: ${st.error}`;
-          break;
-        }
+        if (st.error) { msg = `✗ ${st.step}: ${st.error}`; break; }
         if (st.cameras_found && st.cameras_found.length) {
           if (!st.cameras_found.includes(d.configured_camera)) {
-            msg  = `✗ CAMERA_NAME="${d.configured_camera}" non esiste in Frigate`;
-            hint = 'Camere disponibili in Frigate: ' +
-                   st.cameras_found.join(', ');
+            msg  = `✗ CAMERA="${d.configured_camera}" non esiste in Frigate`;
+            hint = 'Camere disponibili: ' + st.cameras_found.join(', ');
             break;
           }
         }
@@ -1068,67 +1325,10 @@
       showSnapError(null, 'diag: ' + e.message);
     }
   });
-  img.addEventListener('load', resizeCanvas);
 
-  function startAuto() {
-    if (timer) clearInterval(timer);
-    if (autoCb.checked && FRIGATE_OK) {
-      timer = setInterval(loadSnapshot, REFRESH_SEC * 1000);
-    }
-  }
-  autoCb.addEventListener('change', startAuto);
-  document.getElementById('btn-refresh').addEventListener('click', loadSnapshot);
-
-  // ===========================================================
-  //  SAVE / RESET
-  // ===========================================================
-  const fb = document.getElementById('feedback');
-
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    s = Object.assign({}, initial);
-    setFormFromState();
-    fb.textContent = 'modifiche annullate';
-    fb.className = 'feedback';
-  });
-
-  document.getElementById('btn-save').addEventListener('click', async () => {
-    readFormToState();
-    try {
-      const r = await fetch('/api/settings', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(s),
-      });
-      const d = await r.json();
-      if (r.ok && d.ok) {
-        let msg = '✓ salvato (' + d.changed.length + ' parametri)';
-        if (d.postgres_reconnect) {
-          msg += d.postgres_reconnect.ok
-            ? ' · Postgres riconnesso'
-            : ' · Postgres NON connesso: ' + d.postgres_reconnect.message;
-        }
-        if (d.restart_needed) {
-          msg += ' · ⚠ alcuni parametri richiedono restart del container';
-        }
-        fb.textContent = msg;
-        fb.className = 'feedback ok';
-        Object.assign(s, d.current);
-        Object.assign(initial, d.current);
-        setFormFromState();
-        updatePgBadge(d.postgres_reconnect);
-      } else {
-        fb.textContent = '✗ ' + (d.error || 'errore');
-        fb.className = 'feedback err';
-      }
-    } catch (e) {
-      fb.textContent = '✗ ' + e.message;
-      fb.className = 'feedback err';
-    }
-  });
-
-  // ===========================================================
-  //  CAMERA dropdown da Frigate
-  // ===========================================================
+  // ============================================================
+  //  CAMERA dropdown
+  // ============================================================
   document.getElementById('btn-load-cameras').addEventListener('click',
     async () => {
       const msg = document.getElementById('cameras-msg');
@@ -1136,16 +1336,12 @@
       try {
         const r = await fetch('/api/frigate/cameras');
         const d = await r.json();
-        if (!d.ok) {
-          msg.textContent = '✗ ' + (d.error || 'errore');
-          return;
-        }
+        if (!d.ok) { msg.textContent = '✗ ' + (d.error || 'errore'); return; }
         const dl = document.getElementById('camera-list');
         dl.innerHTML = '';
         for (const c of d.cameras) {
           const opt = document.createElement('option');
-          opt.value = c;
-          dl.appendChild(opt);
+          opt.value = c; dl.appendChild(opt);
         }
         msg.textContent = '✓ ' + d.cameras.length + ' camere disponibili';
       } catch (e) {
@@ -1153,23 +1349,19 @@
       }
     });
 
-  // ===========================================================
+  // ============================================================
   //  POSTGRES test + show SQL
-  // ===========================================================
+  // ============================================================
   const dbFb = document.getElementById('db-feedback');
   const pgBadge = document.getElementById('pg-status-badge');
 
   function updatePgBadge(state) {
     if (state && state.ok) {
       pgBadge.textContent = 'connesso';
-      pgBadge.style.background = '#142a14';
-      pgBadge.style.color = '#88dd88';
-      pgBadge.style.borderColor = '#2a5a2a';
-    } else if (state && !state.ok) {
+      pgBadge.className = 'pg-badge ok';
+    } else {
       pgBadge.textContent = 'non connesso';
-      pgBadge.style.background = '#2a1414';
-      pgBadge.style.color = '#ffaaaa';
-      pgBadge.style.borderColor = '#5a3030';
+      pgBadge.className = 'pg-badge err';
     }
   }
 
@@ -1178,10 +1370,13 @@
     dbFb.innerHTML = '<span style="color:var(--muted)">test in corso…</span>';
     try {
       const body = {
-        DB_HOST:   s.DB_HOST,    DB_PORT: s.DB_PORT,
-        DB_NAME:   s.DB_NAME,    DB_USER: s.DB_USER,
-        DB_PASS:   form.elements['DB_PASS'].value || '***',
-        DB_SCHEMA: s.DB_SCHEMA,  DB_TABLE: s.DB_TABLE,
+        DB_HOST:    s.DB_HOST,
+        DB_PORT:    s.DB_PORT,
+        DB_NAME:    s.DB_NAME,
+        DB_USER:    s.DB_USER,
+        DB_PASS:    form.elements['DB_PASS'].value || '***',
+        DB_SCHEMA:  s.DB_SCHEMA,
+        DB_TABLE:   s.DB_TABLE,
         DB_SSLMODE: s.DB_SSLMODE,
       };
       const r = await fetch('/api/db/test', {
@@ -1192,14 +1387,14 @@
       const d = await r.json();
       if (d.ok) {
         const tbl = d.table_exists
-          ? '<span style="color:#88dd88">tabella ' + d.table_full + ' presente</span>'
-          : '<span style="color:#ffd58a">tabella ' + d.table_full + ' assente — verrà creata al primo connect</span>';
-        dbFb.innerHTML = '<span style="color:#88dd88">✓ ' + d.version + '</span><br>' + tbl;
+          ? `<span class="ok">tabella ${d.table_full} presente</span>`
+          : `<span class="warn" style="color:var(--warn)">tabella ${d.table_full} assente — verrà creata al primo connect</span>`;
+        dbFb.innerHTML = `<span class="ok">✓ ${d.version}</span><br>${tbl}`;
       } else {
-        dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + d.error + '</span>';
+        dbFb.innerHTML = `<span class="err">✗ ${d.error}</span>`;
       }
     } catch (e) {
-      dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
+      dbFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
     }
   });
 
@@ -1207,55 +1402,100 @@
     try {
       const r = await fetch('/api/db/sql');
       const d = await r.json();
+      const esc = d.sql.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
       dbFb.innerHTML =
-        '<div style="margin-bottom:.4rem; color:var(--muted)">' +
-        'Copia ed esegui questo SQL come utente con permessi CREATE:' +
-        ' <button id="sql-copy" class="btn" style="font-size:.6rem; padding:.2rem .5rem; margin-left:.4rem">copia</button></div>' +
-        '<pre style="background:var(--bg); padding:.7rem; border:1px solid var(--border); border-radius:3px; max-height:280px; overflow:auto; font-size:.65rem; color:var(--text2); white-space:pre">' +
-        d.sql.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) +
-        '</pre>';
+        `<div style="margin-bottom:.4rem; color:var(--muted)">
+          Esegui questo SQL come utente con permessi CREATE
+          <button id="sql-copy" class="btn btn-mini" style="margin-left:.4rem">copia</button>
+        </div>
+        <pre class="sql-out">${esc}</pre>`;
       document.getElementById('sql-copy').onclick = async () => {
-        try { await navigator.clipboard.writeText(d.sql);
-              document.getElementById('sql-copy').textContent = 'copiato ✓'; }
-        catch (_) {}
+        try {
+          await navigator.clipboard.writeText(d.sql);
+          document.getElementById('sql-copy').textContent = 'copiato ✓';
+        } catch (_) {}
       };
     } catch (e) {
-      dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
+      dbFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
     }
   });
 
-  // ===========================================================
+  // ============================================================
   //  WEBHOOK test
-  // ===========================================================
+  // ============================================================
   const whFb = document.getElementById('webhook-feedback');
-  document.getElementById('btn-webhook-test').addEventListener('click', async () => {
-    // salva PRIMA così il test usa l'URL/headers correnti
+  document.getElementById('btn-webhook-test').addEventListener('click',
+    async () => {
+      readFormToState();
+      whFb.innerHTML = '<span style="color:var(--muted)">salvataggio e test…</span>';
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(s),
+        });
+        const r = await fetch('/api/webhook/test', {method: 'POST'});
+        const d = await r.json();
+        if (d.ok) {
+          whFb.innerHTML = `<span class="ok">✓ ${d.status} da ${d.url}</span>` +
+            (d.body_preview
+              ? `<pre class="sql-out" style="margin-top:.4rem">${d.body_preview.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</pre>`
+              : '');
+        } else {
+          whFb.innerHTML = `<span class="err">✗ ${d.error || 'HTTP ' + d.status}</span>`;
+        }
+      } catch (e) {
+        whFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
+      }
+    });
+
+  // ============================================================
+  //  SAVE / CANCEL
+  // ============================================================
+  const fb = document.getElementById('feedback');
+
+  document.getElementById('btn-cancel').addEventListener('click', () => {
+    s = Object.assign({}, initial);
+    setFormFromState();
+    fb.innerHTML = 'modifiche annullate';
+  });
+
+  document.getElementById('btn-save').addEventListener('click', async () => {
     readFormToState();
-    whFb.innerHTML = '<span style="color:var(--muted)">salvataggio e test…</span>';
+    fb.innerHTML = '<span>salvataggio…</span>';
     try {
-      await fetch('/api/settings', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+      const r = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(s),
       });
-      const r = await fetch('/api/webhook/test', {method: 'POST'});
       const d = await r.json();
-      if (d.ok) {
-        whFb.innerHTML = '<span style="color:#88dd88">✓ ' + d.status +
-          ' da ' + d.url + '</span>' +
-          (d.body_preview
-            ? '<pre style="margin:.4rem 0 0; padding:.5rem; background:var(--bg); border:1px solid var(--border); border-radius:2px; font-size:.65rem; color:var(--text2); white-space:pre-wrap">' + d.body_preview + '</pre>'
-            : '');
+      if (r.ok && d.ok) {
+        let msg = `<span class="ok">✓ salvato (${d.changed.length} parametri)</span>`;
+        if (d.postgres_reconnect) {
+          msg += d.postgres_reconnect.ok
+            ? ' · <span class="ok">Postgres riconnesso</span>'
+            : ` · <span class="err">Postgres NON connesso: ${d.postgres_reconnect.message}</span>`;
+        }
+        if (d.restart_needed) {
+          msg += ' · <span class="warn">⚠ alcuni parametri richiedono restart del container</span>';
+        }
+        fb.innerHTML = msg;
+        Object.assign(s, d.current);
+        Object.assign(initial, d.current);
+        setFormFromState();
+        updatePgBadge(d.postgres_reconnect || {ok: {{ 'true' if postgres_enabled else 'false' }}});
       } else {
-        whFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + (d.error || 'HTTP ' + d.status) + '</span>';
+        fb.innerHTML = `<span class="err">✗ ${d.error || 'errore'}</span>`;
       }
     } catch (e) {
-      whFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
+      fb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
     }
   });
 
-  // ===========================================================
-  //  RESET ACTIONS (sezione Sistema/Reset)
-  // ===========================================================
+  // ============================================================
+  //  RESET ACTIONS
+  // ============================================================
   const rfb = document.getElementById('reset-feedback');
 
   async function doReset(url, body, confirmMsg, label) {
@@ -1281,7 +1521,6 @@
       }
       msg += ` · cumulativi ora: enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
       rfb.innerHTML = `<span class="ok">${msg}</span>`;
-      // ricarica per aggiornare il pannello "Sistema"
       setTimeout(() => location.reload(), 1500);
     } catch (e) {
       rfb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
@@ -1293,7 +1532,6 @@
             'Azzerare i contatori cumulativi? (lo storico resta)',
             'contatori azzerati');
   });
-
   document.getElementById('btn-reset-day').addEventListener('click', () => {
     const day = document.getElementById('reset-day-input').value;
     if (!day) { alert('Seleziona un giorno'); return; }
@@ -1301,26 +1539,19 @@
             `Cancellare TUTTI gli eventi del ${day}? Operazione irreversibile.`,
             'giorno cancellato');
   });
-
   document.getElementById('btn-reset-all').addEventListener('click', () => {
     if (!confirm('⚠ ATTENZIONE: questo cancella TUTTO lo storico e azzera i contatori.')) return;
     if (!confirm('Sei davvero sicuro? Operazione IRREVERSIBILE.')) return;
     doReset('/api/admin/reset-all', null, null, 'wipe completato');
   });
 
-  // ===========================================================
+  // ============================================================
   //  BOOT
-  // ===========================================================
+  // ============================================================
   setFormFromState();
   resizeCanvas();
   updatePgBadge({ok: {{ 'true' if postgres_enabled else 'false' }}});
-  if (FRIGATE_OK) {
-    loadSnapshot();
-    startAuto();
-  } else {
-    // disegna comunque l'overlay su sfondo nero
-    resizeCanvas();
-  }
+  if (FRIGATE_OK) { loadSnapshot(); startAuto(); }
 </script>
 
 </body>

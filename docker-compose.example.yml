@@ -45,6 +45,14 @@ services:
       FRIGATE_URL: "http://192.168.1.10:5000"
       SNAPSHOT_REFRESH_SEC: "3"
 
+      # ---- Webhook (POST JSON ad ogni enter/exit) ----
+      # Configurabile anche dalla UI in Impostazioni → Webhook
+      WEBHOOK_ENABLED: "0"
+      WEBHOOK_URL: ""
+      WEBHOOK_HEADERS: ""          # JSON string es. {"Authorization":"Bearer xyz"}
+      WEBHOOK_TIMEOUT: "4"
+      WEBHOOK_RETRY: "1"
+
       # ---- Storage JSON (sempre attivo come backup locale) ----
       LOG_DIR: "/data"
 
