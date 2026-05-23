@@ -202,6 +202,69 @@ class PostgresStore:
             print(f"[postgres] errore days: {e}", flush=True)
             return []
 
+    def delete_day(self, day: date):
+        """Cancella eventi del giorno e ritorna (enter_deleted, exit_deleted)."""
+        start = datetime(day.year, day.month, day.day)
+        end = start + timedelta(days=1)
+        try:
+            with self._conn() as c, c.cursor() as cur:
+                cur.execute(
+                    f"""
+                    DELETE FROM {self.table}
+                    WHERE camera = %s AND ts >= %s AND ts < %s
+                    RETURNING event_type
+                    """,
+                    (Config.CAMERA, start, end),
+                )
+                rows = cur.fetchall()
+            ent = sum(1 for r in rows if r[0] == "enter")
+            exi = sum(1 for r in rows if r[0] == "exit")
+            return ent, exi
+        except Exception as e:
+            print(f"[postgres] errore delete_day: {e}", flush=True)
+            return 0, 0
+
+    def delete_all(self):
+        """Cancella TUTTI gli eventi della camera corrente."""
+        try:
+            with self._conn() as c, c.cursor() as cur:
+                cur.execute(
+                    f"DELETE FROM {self.table} WHERE camera = %s",
+                    (Config.CAMERA,),
+                )
+                return cur.rowcount or 0
+        except Exception as e:
+            print(f"[postgres] errore delete_all: {e}", flush=True)
+            return 0
+
+    def get_stats(self):
+        try:
+            with self._conn() as c, c.cursor() as cur:
+                cur.execute(
+                    f"""
+                    SELECT COUNT(*),
+                           EXTRACT(epoch FROM MAX(ts)),
+                           COUNT(DISTINCT (ts AT TIME ZONE 'UTC')::date),
+                           MIN(ts), MAX(ts)
+                    FROM {self.table}
+                    WHERE camera = %s
+                    """,
+                    (Config.CAMERA,),
+                )
+                row = cur.fetchone()
+            if not row:
+                return {}
+            return {
+                "events_count": int(row[0] or 0),
+                "last_event_ts": float(row[1]) if row[1] is not None else None,
+                "days_count": int(row[2] or 0),
+                "first_event": row[3].isoformat() if row[3] else None,
+                "last_event": row[4].isoformat() if row[4] else None,
+            }
+        except Exception as e:
+            print(f"[postgres] errore stats: {e}", flush=True)
+            return {}
+
 
 # =============================================================================
 # Store (orchestratore JSON + Postgres)
@@ -323,6 +386,112 @@ class Store:
         if self.pg:
             return self.pg.get_available_days(limit)
         return self._jsonl_available_days(limit)
+
+    # ---- delete / stats ----
+
+    def delete_events_for_day(self, day: date):
+        """Cancella gli eventi del giorno e ritorna (enter_del, exit_del)."""
+        ent_jsonl, exi_jsonl = self._jsonl_delete_day(day)
+        if self.pg:
+            ent_pg, exi_pg = self.pg.delete_day(day)
+            # in dual-write i due numeri devono coincidere; prendiamo il PG
+            return ent_pg, exi_pg
+        return ent_jsonl, exi_jsonl
+
+    def delete_all_events(self):
+        """Cancella tutto lo storico (jsonl + Postgres se presente)."""
+        deleted_pg = 0
+        try:
+            if os.path.exists(Config.EVENTS_FILE):
+                with open(Config.EVENTS_FILE, "w", encoding="utf-8") as f:
+                    f.write("")
+        except Exception as e:
+            print(f"[storage] errore wipe jsonl: {e}", flush=True)
+        if self.pg:
+            deleted_pg = self.pg.delete_all()
+        return deleted_pg
+
+    def get_stats(self):
+        """Statistiche per la pagina admin."""
+        stats = {
+            "events_count": 0,
+            "days_count": 0,
+            "last_event_ts": None,
+            "first_event": None,
+            "last_event": None,
+            "jsonl_size": 0,
+        }
+        if os.path.exists(Config.EVENTS_FILE):
+            try:
+                stats["jsonl_size"] = os.path.getsize(Config.EVENTS_FILE)
+            except Exception:
+                pass
+        if self.pg:
+            stats.update(self.pg.get_stats())
+        else:
+            # conta dal jsonl
+            days = set()
+            count = 0
+            last_ts = None
+            if os.path.exists(Config.EVENTS_FILE):
+                try:
+                    with open(Config.EVENTS_FILE, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                evt = json.loads(line)
+                            except Exception:
+                                continue
+                            count += 1
+                            dt = evt.get("datetime", "")
+                            if len(dt) >= 10:
+                                days.add(dt[:10])
+                            ts = evt.get("ts")
+                            if ts and (last_ts is None or ts > last_ts):
+                                last_ts = ts
+                except Exception as e:
+                    print(f"[storage] errore stats: {e}", flush=True)
+            stats["events_count"] = count
+            stats["days_count"] = len(days)
+            stats["last_event_ts"] = last_ts
+        return stats
+
+    def _jsonl_delete_day(self, day: date):
+        if not os.path.exists(Config.EVENTS_FILE):
+            return 0, 0
+        day_str = day.strftime("%Y-%m-%d")
+        tmp = Config.EVENTS_FILE + ".tmp"
+        ent = exi = 0
+        try:
+            with open(Config.EVENTS_FILE, "r", encoding="utf-8") as src, \
+                 open(tmp, "w", encoding="utf-8") as dst:
+                for line in src:
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    try:
+                        evt = json.loads(stripped)
+                    except Exception:
+                        # riga corrotta -> scarto
+                        continue
+                    if evt.get("datetime", "").startswith(day_str):
+                        if evt.get("type") == "enter":
+                            ent += 1
+                        elif evt.get("type") == "exit":
+                            exi += 1
+                        continue
+                    dst.write(stripped + "\n")
+            os.replace(tmp, Config.EVENTS_FILE)
+        except Exception as e:
+            print(f"[storage] errore delete_day jsonl: {e}", flush=True)
+            try:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+            except Exception:
+                pass
+        return ent, exi
 
     def _jsonl_available_days(self, limit=60):
         if not os.path.exists(Config.EVENTS_FILE):

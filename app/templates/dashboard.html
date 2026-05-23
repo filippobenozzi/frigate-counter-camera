@@ -362,12 +362,7 @@
     <span class="badge">Dir: {{ enter_direction }}</span>
   </div>
   <div class="actions">
-    <button class="btn danger"
-            hx-post="/api/reset"
-            hx-confirm="Azzerare TUTTI i contatori cumulativi?"
-            hx-on::after-request="location.reload()">
-      Reset
-    </button>
+    <a class="btn" href="/admin">Admin</a>
     {% if auth_enabled %}
       <a class="btn" href="/logout">Logout</a>
     {% endif %}

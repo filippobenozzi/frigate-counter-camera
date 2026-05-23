@@ -168,16 +168,86 @@ def create_app(store, tracker):
             }
         return jsonify(data)
 
-    @app.route("/api/reset", methods=["POST"])
+    # -------- ADMIN --------
+
+    @app.route("/admin")
     @login_required
-    def api_reset():
+    def admin():
+        with store.lock:
+            snapshot = store.snapshot()
+        stats = store.get_stats()
+        return render_template(
+            "admin.html",
+            camera=Config.CAMERA,
+            snapshot=snapshot,
+            stats=stats,
+            today_iso=date.today().isoformat(),
+            postgres_enabled=Config.postgres_enabled(),
+            auth_enabled=Config.auth_enabled(),
+        )
+
+    @app.route("/api/admin/reset-counters", methods=["POST"])
+    @login_required
+    def api_reset_counters():
+        """Azzera solo i contatori cumulativi. Non tocca lo storico."""
         with store.lock:
             store.counts["enter"] = 0
             store.counts["exit"] = 0
             tracker.clear_all()
             store.save_counts()
             snap = store.snapshot()
-        return jsonify({"ok": True, **snap})
+        print("[admin] reset cumulativi", flush=True)
+        return jsonify({"ok": True, "action": "reset-counters", **snap})
+
+    @app.route("/api/admin/reset-day", methods=["POST"])
+    @login_required
+    def api_reset_day():
+        """Cancella eventi del giorno e sottrae quei conteggi dai cumulativi."""
+        day_str = request.form.get("day") or request.args.get("day")
+        if not day_str:
+            return jsonify({"ok": False, "error": "missing day"}), 400
+        try:
+            day = datetime.strptime(day_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"ok": False, "error": "invalid day"}), 400
+
+        with store.lock:
+            ent_del, exi_del = store.delete_events_for_day(day)
+            # mantieni consistenza dei cumulativi (non sotto zero)
+            store.counts["enter"] = max(0, store.counts["enter"] - ent_del)
+            store.counts["exit"]  = max(0, store.counts["exit"]  - exi_del)
+            store.save_counts()
+            snap = store.snapshot()
+        print(f"[admin] reset day {day}: -{ent_del} enter, -{exi_del} exit",
+              flush=True)
+        return jsonify({
+            "ok": True, "action": "reset-day", "day": day.isoformat(),
+            "deleted_enter": ent_del, "deleted_exit": exi_del,
+            **snap,
+        })
+
+    @app.route("/api/admin/reset-all", methods=["POST"])
+    @login_required
+    def api_reset_all():
+        """Cancella TUTTO: cumulativi + storico (jsonl + Postgres)."""
+        with store.lock:
+            deleted_pg = store.delete_all_events()
+            store.counts["enter"] = 0
+            store.counts["exit"] = 0
+            tracker.clear_all()
+            store.save_counts()
+            snap = store.snapshot()
+        print(f"[admin] WIPE totale (postgres: {deleted_pg} righe)", flush=True)
+        return jsonify({
+            "ok": True, "action": "reset-all",
+            "deleted_pg_rows": deleted_pg, **snap,
+        })
+
+    # ---- alias retrocompatibile con il vecchio /api/reset ----
+    @app.route("/api/reset", methods=["POST"])
+    @login_required
+    def api_reset_legacy():
+        return api_reset_counters()
 
     @app.route("/export.csv")
     @login_required

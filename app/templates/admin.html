@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Person Counter — {{ camera }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg:        #000000;
+      --panel:     #0d0d0d;
+      --panel2:    #161616;
+      --panel3:    #1f1f1f;
+      --border:    #262626;
+      --border-st: #3a3a3a;
+      --text:      #f5f5f5;
+      --text2:     #d4d4d4;
+      --muted:     #999999;
+      --dim:       #666666;
+      --dimmer:    #444444;
+      --accent:    #ffffff;
+      --enter:     #ffffff;
+      --exit:      #777777;
+      --occ:       #bbbbbb;
+    }
+    body {
+      font-family: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      background: var(--bg); color: var(--text);
+      margin: 0; padding: 0; font-weight: 400;
+      font-feature-settings: "tnum" 1, "zero" 1;
+    }
+
+    /* ===== HEADER (riusa stesso stile dashboard) ===== */
+    header {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    header h1 {
+      margin: 0; font-size: .95rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .12em;
+    }
+    header h1 .cam { color: var(--accent); }
+    header h1 .sep { color: var(--dimmer); margin: 0 .5rem; }
+    header h1 .crumb { color: var(--muted); }
+
+    .actions { display: flex; gap: .4rem; align-items: center; }
+    .btn {
+      padding: .5rem .9rem; border-radius: 3px;
+      background: var(--panel2); color: var(--text);
+      border: 1px solid var(--border); cursor: pointer;
+      font-size: .75rem; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase;
+      text-decoration: none; font-family: inherit;
+      display: inline-flex; align-items: center; gap: .35rem;
+      transition: background .15s, border-color .15s;
+    }
+    .btn:hover { background: var(--panel3); border-color: var(--border-st); }
+    .btn.danger { color: var(--text); border-color: var(--border-st); }
+    .btn.danger:hover {
+      background: #2a1414; border-color: #5a3030;
+      color: #ffaaaa;
+    }
+    .btn.warn:hover {
+      background: #1f1a10; border-color: #5a4a20;
+      color: #ffd58a;
+    }
+    .btn.primary { background: var(--accent); color: var(--bg);
+      border-color: var(--accent); font-weight: 700; }
+    .btn.primary:hover { background: #cccccc; }
+
+    main { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 2rem 0 .75rem;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+    .section-title h2 {
+      margin: 0; font-size: .7rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .15em; font-weight: 500;
+    }
+    .section-title h2::before { content: "// "; color: var(--dimmer); }
+
+    /* ===== STATUS GRID ===== */
+    .status-grid {
+      display: grid; gap: 1px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 4px; overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .stat {
+      background: var(--panel); padding: 1rem 1.25rem;
+    }
+    .stat .lbl {
+      color: var(--muted); font-size: .6rem;
+      text-transform: uppercase; letter-spacing: .15em;
+      font-weight: 500; margin-bottom: .4rem;
+    }
+    .stat .val {
+      font-size: 1.4rem; font-weight: 500; line-height: 1.1;
+      letter-spacing: -.02em; word-break: break-all;
+    }
+    .stat .val.dim { color: var(--dim); font-size: .9rem; font-weight: 300; }
+    .stat .sub {
+      color: var(--dim); font-size: .65rem;
+      margin-top: .35rem; letter-spacing: .05em;
+    }
+
+    /* ===== ACTION CARDS ===== */
+    .action {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--dimmer);
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .action.danger    { border-left-color: #aa3030; }
+    .action.warn      { border-left-color: #aa7720; }
+    .action.safe      { border-left-color: #4a4a4a; }
+    .action .desc h3 {
+      margin: 0 0 .35rem; font-size: .8rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+    }
+    .action .desc p {
+      margin: 0; color: var(--muted); font-size: .8rem;
+      line-height: 1.6;
+    }
+    .action .desc small {
+      display: block; color: var(--dim); font-size: .7rem;
+      margin-top: .5rem; letter-spacing: .03em;
+    }
+    .action .desc code {
+      background: var(--panel2); color: var(--text2);
+      padding: .1rem .4rem; border-radius: 2px;
+      border: 1px solid var(--border); font-size: .72rem;
+    }
+    .action .ctrl {
+      display: flex; flex-direction: column; gap: .5rem; min-width: 230px;
+    }
+    .action .ctrl input[type=date] {
+      background: var(--panel2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 3px;
+      padding: .5rem .7rem; font-size: .8rem;
+      font-family: inherit; color-scheme: dark; width: 100%;
+    }
+    .action .ctrl input[type=date]:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .action .ctrl .btn { justify-content: center; }
+
+    .feedback {
+      margin-top: 1.5rem; padding: 1rem 1.25rem;
+      background: var(--panel2); border: 1px solid var(--border-st);
+      border-left: 3px solid var(--accent);
+      border-radius: 3px;
+      font-size: .8rem; color: var(--text2);
+      min-height: 1rem;
+    }
+    .feedback:empty { display: none; }
+    .feedback .ok  { color: var(--text); font-weight: 500; }
+    .feedback .err { color: #ffaaaa; font-weight: 500; }
+
+    @media (max-width: 720px) {
+      header, main { padding: 1rem; }
+      .action { grid-template-columns: 1fr; }
+      .action .ctrl { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    Person Counter <span class="sep">/</span>
+    <span class="cam">{{ camera }}</span>
+    <span class="sep">/</span>
+    <span class="crumb">Admin</span>
+  </h1>
+  <div class="actions">
+    <a class="btn" href="/">← Dashboard</a>
+    {% if auth_enabled %}
+      <a class="btn" href="/logout">Logout</a>
+    {% endif %}
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ STATUS ============ -->
+  <div class="section-title">
+    <h2>Stato sistema</h2>
+  </div>
+  <div class="status-grid">
+    <div class="stat">
+      <div class="lbl">Entrate cumulative</div>
+      <div class="val">{{ snapshot.enter }}</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Uscite cumulative</div>
+      <div class="val">{{ snapshot.exit }}</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Presenti ora</div>
+      <div class="val">{{ snapshot.occupancy }}</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Eventi storici</div>
+      <div class="val">{{ stats.events_count or 0 }}</div>
+      <div class="sub">in {{ stats.days_count or 0 }} giorni distinti</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">Storage</div>
+      <div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
+      {% if stats.jsonl_size %}
+        <div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size / 1024) }} KB</div>
+      {% endif %}
+    </div>
+    <div class="stat">
+      <div class="lbl">Ultimo evento</div>
+      <div class="val dim">
+        {% if stats.last_event_ts %}
+          {{ stats.last_event[:19].replace('T', ' ') if stats.last_event else '—' }}
+        {% else %}—{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESET COUNTERS ============ -->
+  <div class="section-title">
+    <h2>Azioni</h2>
+  </div>
+
+  <div class="action safe">
+    <div class="desc">
+      <h3>Reset cumulativi</h3>
+      <p>
+        Azzera <code>enter</code>, <code>exit</code> e <code>presenti</code>.
+        <strong>Lo storico degli eventi resta intatto</strong> — utile se hai
+        appena montato la camera e vuoi ripartire da zero senza perdere i log.
+      </p>
+      <small>Operazione reversibile? No, i contatori tornano a 0.</small>
+    </div>
+    <div class="ctrl">
+      <button class="btn"
+              hx-post="/api/admin/reset-counters"
+              hx-target="#feedback"
+              hx-confirm="Azzerare i contatori cumulativi (storico preservato)?">
+        Azzera contatori
+      </button>
+    </div>
+  </div>
+
+  <div class="action warn">
+    <div class="desc">
+      <h3>Reset statistiche di un giorno</h3>
+      <p>
+        Cancella <strong>tutti gli eventi di un singolo giorno</strong> dallo
+        storico (sia da Postgres sia dal file <code>events.jsonl</code>).
+        I contatori cumulativi vengono corretti di conseguenza
+        (vengono sottratti gli enter/exit del giorno).
+      </p>
+      <small>Usa quando vuoi rimuovere falsi positivi accumulati in una giornata.</small>
+    </div>
+    <div class="ctrl">
+      <form id="day-form" hx-post="/api/admin/reset-day"
+            hx-target="#feedback"
+            hx-confirm="Cancellare TUTTI gli eventi del giorno selezionato?">
+        <input type="date" name="day"
+               value="{{ today_iso }}" max="{{ today_iso }}" required>
+        <button type="submit" class="btn warn" style="margin-top: .5rem; width: 100%">
+          Cancella giorno
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="action danger">
+    <div class="desc">
+      <h3>Reset totale (wipe)</h3>
+      <p>
+        <strong>Cancella TUTTO lo storico</strong> + azzera i contatori.
+        Eventi rimossi sia dal file JSON sia dalla tabella Postgres.
+        Operazione <strong>irreversibile</strong>.
+      </p>
+      <small>Da usare solo se hai esportato i dati o stai cambiando configurazione completamente.</small>
+    </div>
+    <div class="ctrl">
+      <button class="btn danger"
+              hx-post="/api/admin/reset-all"
+              hx-target="#feedback"
+              hx-confirm="⚠ ATTENZIONE: questo cancella TUTTO lo storico e azzera i contatori. L'operazione è IRREVERSIBILE. Procedere?">
+        Wipe totale
+      </button>
+    </div>
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+
+</main>
+
+<script>
+  // Trasforma la risposta JSON in messaggio leggibile nel pannello feedback,
+  // poi ricarica le statistiche in alto dopo 1.5s.
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const fb = document.getElementById('feedback');
+    if (!fb) return;
+    if (!evt.detail.xhr) return;
+    const xhr = evt.detail.xhr;
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (xhr.status >= 200 && xhr.status < 300 && d.ok) {
+        let msg = '';
+        if (d.action === 'reset-counters') {
+          msg = `✓ Contatori azzerati. enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
+        } else if (d.action === 'reset-day') {
+          msg = `✓ Giorno ${d.day} cancellato. Rimossi ${d.deleted_enter} enter + ${d.deleted_exit} exit. ` +
+                `Cumulativi: enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
+        } else if (d.action === 'reset-all') {
+          msg = `✓ Wipe completato. Eliminate ${d.deleted_pg_rows} righe da Postgres + file JSON svuotato.`;
+        } else {
+          msg = '✓ OK';
+        }
+        fb.innerHTML = `<span class="ok">${msg}</span>`;
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        fb.innerHTML = `<span class="err">✗ Errore: ${d.error || xhr.status}</span>`;
+      }
+    } catch (_) {
+      fb.innerHTML = `<span class="err">✗ Risposta non valida (HTTP ${xhr.status})</span>`;
+    }
+  });
+</script>
+
+</body>
+</html>
