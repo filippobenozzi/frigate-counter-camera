@@ -22,6 +22,8 @@
       font-family:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
       background:var(--bg); color:var(--text); margin:0;
       font-feature-settings:"tnum" 1, "zero" 1;
+      /* spazio in fondo per la save bar fixed */
+      padding-bottom:84px;
     }
 
     /* ============ HEADER ============ */
@@ -121,14 +123,18 @@
       color:var(--dim); font-size:.7rem; letter-spacing:.05em;
     }
 
-    /* ============ TAB CAMERA: layout split ============ */
+    /* ============ TAB CAMERA: snapshot in alto, parametri sotto ============ */
     .camera-split {
-      display:grid; gap:1.5rem;
-      grid-template-columns:minmax(0,1fr) 380px;
+      display:grid; gap:1.5rem; grid-template-columns:1fr;
     }
-    @media (max-width:1100px){
-      .camera-split{ grid-template-columns:1fr; }
+    /* il canvas a tutta larghezza diventerebbe enorme: lo limitiamo */
+    .canvas-panel { max-width:1100px; margin:0 auto; width:100%; }
+    /* i parametri sotto, in griglia auto-fit di card */
+    .params-grid {
+      display:grid; gap:1rem;
+      grid-template-columns:repeat(auto-fit, minmax(320px,1fr));
     }
+    .params-grid .card { margin-bottom:0; }
 
     /* ============ CANVAS PANEL ============ */
     .canvas-panel{
@@ -337,16 +343,15 @@
       .action .ctrl{ min-width:0; }
     }
 
-    /* ============ SAVE BAR sticky ============ */
+    /* ============ SAVE BAR fixed (ancorata in fondo alla viewport) ============ */
     .save-bar {
-      position:sticky; bottom:0;
+      position:fixed; bottom:0; left:0; right:0; z-index:50;
       background:var(--panel);
       border-top:1px solid var(--border);
-      margin:2rem -2rem 0;
       padding:1rem 2rem;
       display:flex; gap:.5rem; align-items:center;
       flex-wrap:wrap;
-      box-shadow:0 -8px 16px rgba(0,0,0,.4);
+      box-shadow:0 -8px 24px rgba(0,0,0,.6);
     }
     .save-bar .save-feedback {
       flex:1; min-height:1rem; font-size:.75rem;
@@ -426,7 +431,7 @@
 
   <div class="camera-split">
 
-    <!-- ---- SX: snapshot live + canvas ---- -->
+    <!-- ---- IN ALTO: snapshot live + canvas ---- -->
     <div>
       <div class="section-title">
         <h2>Visualizzatore camera</h2>
@@ -467,12 +472,13 @@
       </div>
     </div>
 
-    <!-- ---- DX: parametri visuali ---- -->
+    <!-- ---- IN BASSO: parametri visuali in griglia ---- -->
     <div>
       <div class="section-title">
         <h2>Parametri visuali</h2>
       </div>
 
+      <div class="params-grid">
       <div class="card">
         <h3>Camera</h3>
         <div class="field">
@@ -608,6 +614,7 @@
           <span></span>
         </div>
       </div>
+      </div>  <!-- /.params-grid -->
 
     </div>
   </div>
