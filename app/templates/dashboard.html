@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Person Counter — {{ camera }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg:        #000000;
+      --panel:     #0d0d0d;
+      --panel2:    #161616;
+      --panel3:    #1f1f1f;
+      --border:    #262626;
+      --border-st: #3a3a3a;
+      --text:      #f5f5f5;
+      --text2:     #d4d4d4;
+      --muted:     #999999;
+      --dim:       #666666;
+      --dimmer:    #444444;
+      --accent:    #ffffff;
+
+      /* monocromatico: enter = brillante, exit = medio, occupancy = chiaro */
+      --enter:     #ffffff;
+      --exit:      #777777;
+      --occ:       #bbbbbb;
+    }
+    body {
+      font-family: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0; padding: 0;
+      font-weight: 400;
+      font-feature-settings: "tnum" 1, "zero" 1; /* numeri tabular */
+    }
+
+    /* ===================== HEADER ===================== */
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+    header h1 .cam { color: var(--accent); }
+    header h1 .sep { color: var(--dimmer); margin: 0 .5rem; }
+
+    .badges { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .badge {
+      font-size: .65rem;
+      padding: .25rem .6rem;
+      border-radius: 2px;
+      background: var(--panel2);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .badge.on  { color: var(--text); border-color: var(--border-st); }
+    .badge.off { color: var(--dim); }
+
+    .actions { display: flex; gap: .4rem; align-items: center; }
+    .btn {
+      padding: .5rem .9rem;
+      border-radius: 3px;
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: .75rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      font-family: inherit;
+      display: inline-flex; align-items: center; gap: .35rem;
+      transition: background .15s, border-color .15s;
+    }
+    .btn:hover { background: var(--panel3); border-color: var(--border-st); }
+    .btn.primary {
+      background: var(--accent); color: var(--bg);
+      border-color: var(--accent); font-weight: 700;
+    }
+    .btn.primary:hover { background: #cccccc; }
+    .btn.danger {
+      color: var(--text); border-color: var(--border-st);
+    }
+    .btn.danger:hover {
+      background: var(--panel3); color: var(--accent);
+    }
+    .btn.icon { padding: .5rem .7rem; min-width: 2.2rem; justify-content: center; }
+
+    main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+    /* ===================== SECTION TITLE ===================== */
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 2rem 0 .75rem;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+    .section-title h2 {
+      margin: 0;
+      font-size: .7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 500;
+    }
+    .section-title h2::before {
+      content: "// ";
+      color: var(--dimmer);
+    }
+    .section-title .right {
+      color: var(--dim);
+      font-size: .75rem;
+      letter-spacing: .05em;
+    }
+
+    /* ===================== CARDS ===================== */
+    .grid {
+      display: grid; gap: 1px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin-bottom: 1.5rem;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .card {
+      background: var(--panel);
+      padding: 1.25rem 1.5rem;
+    }
+    .card .lbl {
+      color: var(--muted);
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 500;
+      margin-bottom: .5rem;
+    }
+    .card .num {
+      font-size: 2.5rem;
+      font-weight: 300;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.02em;
+    }
+    .card .sub {
+      color: var(--dim);
+      font-size: .7rem;
+      margin-top: .35rem;
+      letter-spacing: .03em;
+    }
+    .num.enter { color: var(--enter); font-weight: 500; }
+    .num.exit  { color: var(--exit);  font-weight: 400; }
+    .num.occ   { color: var(--occ);   font-weight: 400; }
+
+    /* ===================== DATE NAV ===================== */
+    .daynav {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: .75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .daynav .arrows { display: flex; gap: .25rem; }
+    .daynav input[type=date] {
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: .5rem .7rem;
+      font-size: .8rem;
+      font-family: inherit;
+      color-scheme: dark;
+    }
+    .daynav input[type=date]:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .daynav .day-label {
+      font-weight: 500;
+      font-size: .9rem;
+      margin-left: .5rem;
+      letter-spacing: .03em;
+      text-transform: capitalize;
+    }
+    .daynav .day-label.today { color: var(--accent); font-weight: 700; }
+    .daynav .day-label .tag {
+      color: var(--accent);
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      margin-left: .5rem;
+      padding: .1rem .4rem;
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+    }
+    .daynav .spacer { flex: 1; }
+
+    /* ===================== CHART ===================== */
+    .chart-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      position: relative; height: 340px;
+    }
+
+    /* ===================== FILTER ===================== */
+    .filter-bar {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .filter-bar label {
+      color: var(--muted);
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 500;
+    }
+    .filter-bar select {
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: .4rem .6rem;
+      font-family: inherit;
+      font-size: .8rem;
+    }
+    .filter-bar select:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .filter-bar .arrow { color: var(--dim); }
+    .filter-bar .count {
+      color: var(--dim);
+      font-size: .75rem;
+      margin-left: .5rem;
+      letter-spacing: .03em;
+    }
+    .filter-bar .count strong { color: var(--text); font-weight: 500; }
+
+    /* ===================== TABLE ===================== */
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: .65rem .9rem;
+      text-align: left;
+      font-size: .8rem;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    th {
+      background: var(--panel2);
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: .65rem;
+      letter-spacing: .12em;
+      font-weight: 500;
+    }
+    tbody tr:hover { background: var(--panel2); }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    td.type-enter {
+      color: var(--enter);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    td.type-exit  {
+      color: var(--exit);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    td.mono {
+      color: var(--dim);
+      font-size: .7rem;
+      font-weight: 300;
+    }
+    .empty {
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--dim);
+      font-size: .85rem;
+      letter-spacing: .05em;
+    }
+    .empty::before { content: "// "; color: var(--dimmer); }
+
+    /* ===================== FOOTER META ===================== */
+    .meta-foot {
+      margin-top: 2rem;
+      color: var(--dim);
+      font-size: .7rem;
+      line-height: 1.8;
+      letter-spacing: .03em;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+    .meta-foot code {
+      background: var(--panel2);
+      color: var(--text2);
+      padding: .1rem .45rem;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      font-size: .7rem;
+    }
+    .meta-foot .dot { color: var(--dimmer); margin: 0 .35rem; }
+
+    /* ===================== SCROLLBAR ===================== */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-st);
+      border-radius: 5px;
+      border: 2px solid var(--bg);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+    @media (max-width: 640px) {
+      header, main { padding: 1rem; }
+      .card .num { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Person Counter <span class="sep">/</span> <span class="cam">{{ camera }}</span></h1>
+  <div class="badges">
+    <span class="badge {{ 'on' if postgres_enabled else 'off' }}">
+      DB: {{ 'POSTGRES' if postgres_enabled else 'JSON' }}
+    </span>
+    <span class="badge {{ 'on' if auth_enabled else 'off' }}">
+      Auth: {{ 'ON' if auth_enabled else 'OFF' }}
+    </span>
+    <span class="badge">Dir: {{ enter_direction }}</span>
+  </div>
+  <div class="actions">
+    <button class="btn danger"
+            hx-post="/api/reset"
+            hx-confirm="Azzerare TUTTI i contatori cumulativi?"
+            hx-on::after-request="location.reload()">
+      Reset
+    </button>
+    {% if auth_enabled %}
+      <a class="btn" href="/logout">Logout</a>
+    {% endif %}
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ CONTATORI CUMULATIVI ============ -->
+  <div class="section-title">
+    <h2>Cumulativi (totali)</h2>
+    <span class="right" id="last-update">aggiornato ora</span>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="lbl">Entrate totali</div>
+      <div class="num enter" id="t-enter">{{ snapshot.enter }}</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Uscite totali</div>
+      <div class="num exit" id="t-exit">{{ snapshot.exit }}</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Presenti ora</div>
+      <div class="num occ" id="t-occ">{{ snapshot.occupancy }}</div>
+    </div>
+  </div>
+
+  <!-- ============ DAY NAVIGATOR ============ -->
+  <div class="section-title">
+    <h2>Statistiche del giorno</h2>
+  </div>
+  <form class="daynav" method="get" action="/">
+    <div class="arrows">
+      <a class="btn icon" href="?day={{ prev_day }}" title="Giorno precedente">←</a>
+      <a class="btn icon" href="?day={{ next_day }}" title="Giorno successivo">→</a>
+      <a class="btn" href="?day={{ today_iso }}" title="Vai a oggi">Oggi</a>
+    </div>
+    <input type="date" name="day" value="{{ day.isoformat() }}"
+           max="{{ today_iso }}" onchange="this.form.submit()">
+    <span class="day-label {{ 'today' if is_today else '' }}">
+      {{ day.strftime('%A %d %B %Y') }}
+      {% if is_today %}<span class="tag">LIVE</span>{% endif %}
+    </span>
+    <div class="spacer"></div>
+    <a class="btn"
+       href="/export.csv?day={{ day.isoformat() }}&from={{ h_from }}&to={{ h_to }}">
+      Export CSV
+    </a>
+  </form>
+
+  <!-- ============ DAY TOTALS ============ -->
+  <div class="grid">
+    <div class="card">
+      <div class="lbl">Entrate del giorno</div>
+      <div class="num enter">{{ day_enter }}</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Uscite del giorno</div>
+      <div class="num exit">{{ day_exit }}</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Picco presenze</div>
+      <div class="num occ">{{ day_peak }}</div>
+      <div class="sub">max contemporaneamente</div>
+    </div>
+  </div>
+
+  <!-- ============ HOURLY CHART ============ -->
+  <div class="chart-wrap">
+    <canvas id="hourly-chart"></canvas>
+  </div>
+
+  <!-- ============ HOUR FILTER ============ -->
+  <form class="filter-bar" method="get" action="/">
+    <input type="hidden" name="day" value="{{ day.isoformat() }}">
+    <label>Range orario</label>
+    <select name="from" onchange="this.form.submit()">
+      {% for h in range(24) %}
+        <option value="{{ h }}" {% if h == h_from %}selected{% endif %}>
+          {{ "%02d:00"|format(h) }}
+        </option>
+      {% endfor %}
+    </select>
+    <span class="arrow">→</span>
+    <select name="to" onchange="this.form.submit()">
+      {% for h in range(24) %}
+        <option value="{{ h }}" {% if h == h_to %}selected{% endif %}>
+          {{ "%02d:59"|format(h) }}
+        </option>
+      {% endfor %}
+    </select>
+    <span class="count"><strong>{{ events|length }}</strong> eventi nel range</span>
+  </form>
+
+  <!-- ============ EVENTS TABLE ============ -->
+  <div class="table-wrap">
+    {% if events %}
+    <table>
+      <thead>
+        <tr>
+          <th>Ora</th>
+          <th>Tipo</th>
+          <th>Enter dopo</th>
+          <th>Exit dopo</th>
+          <th>Presenti dopo</th>
+          <th>Metodo</th>
+          <th>Diagnosi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in events %}
+        <tr>
+          <td>{{ e.datetime[11:19] }}</td>
+          <td class="type-{{ e.type }}">{{ e.type }}</td>
+          <td>{{ e.counts_after.enter }}</td>
+          <td>{{ e.counts_after.exit }}</td>
+          <td>{{ e.counts_after.occupancy }}</td>
+          <td class="mono">{{ e.method }}</td>
+          <td class="mono">{{ e.reason }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">nessun evento per il range selezionato</div>
+    {% endif %}
+  </div>
+
+  <div class="meta-foot">
+    method <code>full_motion</code><span class="dot">·</span>
+    point <code>{{ point_mode }}</code><span class="dot">·</span>
+    enter_dir <code>{{ enter_direction }}</code><span class="dot">·</span>
+    storage <code>{{ 'PostgreSQL' if postgres_enabled else 'events.jsonl' }}</code>
+  </div>
+
+</main>
+
+<script>
+  // ---- palette grigi per il chart ----
+  const C_ENTER = '#ffffff';
+  const C_EXIT  = '#777777';
+  const C_OCC   = '#bbbbbb';
+  const C_GRID  = '#1f1f1f';
+  const C_AXIS  = '#666666';
+  const C_PANEL = '#0d0d0d';
+  const C_BORD  = '#3a3a3a';
+
+  Chart.defaults.font.family = '"Roboto Mono", ui-monospace, monospace';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = C_AXIS;
+
+  const hourly = {{ hourly|tojson }};
+  const labels = hourly.map(b => String(b.hour).padStart(2, '0'));
+  const enters = hourly.map(b => b.enter);
+  const exits  = hourly.map(b => b.exit);
+  const occ    = hourly.map(b => b.occupancy);
+
+  new Chart(document.getElementById('hourly-chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar',  label: 'ENTER', data: enters,
+          backgroundColor: C_ENTER, borderRadius: 2, borderSkipped: false,
+          barPercentage: .85, categoryPercentage: .75 },
+        { type: 'bar',  label: 'EXIT',  data: exits,
+          backgroundColor: C_EXIT, borderRadius: 2, borderSkipped: false,
+          barPercentage: .85, categoryPercentage: .75 },
+        { type: 'line', label: 'PRESENTI', data: occ,
+          borderColor: C_OCC,
+          backgroundColor: 'rgba(187,187,187,.08)',
+          tension: .25, fill: true, yAxisID: 'y1',
+          pointRadius: 3, pointBackgroundColor: C_OCC,
+          pointBorderColor: C_PANEL, pointBorderWidth: 1.5,
+          borderWidth: 1.5, borderDash: [4, 3] },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#d4d4d4', usePointStyle: false,
+                    boxWidth: 12, boxHeight: 12,
+                    font: { size: 10, weight: 500 } },
+        },
+        tooltip: {
+          backgroundColor: C_PANEL, borderColor: C_BORD, borderWidth: 1,
+          titleColor: '#ffffff', bodyColor: '#d4d4d4',
+          titleFont: { weight: 700, size: 11 },
+          bodyFont: { size: 11 },
+          padding: 10, cornerRadius: 3, displayColors: true,
+          boxWidth: 8, boxHeight: 8,
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: C_AXIS, font: { size: 10 } },
+          grid:  { color: C_GRID, drawTicks: false },
+          border:{ color: C_BORD },
+        },
+        y: {
+          ticks: { color: C_AXIS, font: { size: 10 } },
+          grid:  { color: C_GRID, drawTicks: false },
+          border:{ color: C_BORD },
+          beginAtZero: true,
+          title: { display: true, text: 'EVENTI', color: C_AXIS,
+                   font: { size: 10, weight: 500 }, padding: 8 },
+        },
+        y1: {
+          position: 'right',
+          ticks: { color: '#bbbbbb', font: { size: 10 } },
+          grid:  { display: false },
+          beginAtZero: true,
+          title: { display: true, text: 'PRESENTI', color: '#bbbbbb',
+                   font: { size: 10, weight: 500 }, padding: 8 },
+        },
+      },
+    },
+  });
+
+  // ---- polling totali cumulativi solo se siamo su OGGI ----
+  const isToday = {{ 'true' if is_today else 'false' }};
+  if (isToday) {
+    setInterval(async () => {
+      try {
+        const r = await fetch('/api/counts');
+        if (!r.ok) return;
+        const d = await r.json();
+        document.getElementById('t-enter').textContent = d.enter;
+        document.getElementById('t-exit').textContent  = d.exit;
+        document.getElementById('t-occ').textContent   = d.occupancy;
+        const now = new Date();
+        document.getElementById('last-update').textContent =
+          'aggiornato ' + now.toLocaleTimeString();
+      } catch (_) {}
+    }, 3000);
+  }
+</script>
+
+</body>
+</html>

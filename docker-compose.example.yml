@@ -1,0 +1,70 @@
+services:
+  counter:
+    build: .
+    image: frigate-counter:latest
+    container_name: frigate-counter
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      # ---- MQTT (Frigate broker) ----
+      MQTT_HOST: "192.168.1.10"
+      MQTT_PORT: "1883"
+      MQTT_USER: ""
+      MQTT_PASS: ""
+
+      # ---- Camera ----
+      CAMERA_NAME: "ingresso"
+      FRAME_WIDTH: "1280"
+      FRAME_HEIGHT: "720"
+      ENTER_DIRECTION: "up"      # up = entrare = dal basso verso l'alto
+      POINT_MODE: "bottom"       # bottom | center
+
+      # ---- ROI / soglie movimento ----
+      MOTION_X1: "0.20"
+      MOTION_X2: "0.92"
+      MOTION_Y1: "0.05"
+      MOTION_Y2: "0.98"
+      MOTION_MIN_POINTS: "4"
+      MOTION_MIN_DELTA_Y: "0.16"
+      MOTION_MIN_SPAN_Y: "0.20"
+      MOTION_MIN_NET_RATIO: "0.45"
+      JITTER_DISTANCE: "0.015"
+      REQUIRED_ZONE: ""
+
+      # ---- Storage JSON (sempre attivo come backup locale) ----
+      LOG_DIR: "/data"
+
+      # ---- Auth (se vuote, dashboard PUBBLICA) ----
+      AUTH_USER: "admin"
+      AUTH_PASS: "cambia-questa-password"
+      SECRET_KEY: "metti-qui-una-stringa-random-lunga"
+      SESSION_DAYS: "7"
+
+      # ---- Postgres (se vuote, solo JSON) ----
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_NAME: "frigate_counter"
+      DB_USER: "counter"
+      DB_PASS: "counter-pass"
+      DB_SCHEMA: "public"
+      DB_TABLE: "counter_events"
+      DB_SSLMODE: "prefer"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: frigate-counter-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: frigate_counter
+      POSTGRES_USER: counter
+      POSTGRES_PASSWORD: counter-pass
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    ports:
+      - "5432:5432"
