@@ -199,6 +199,7 @@
         </div>
         <div class="canvas-toolbar">
           <button class="btn" id="btn-refresh">↻ Snapshot</button>
+          <button class="btn" id="btn-diag">Diagnostica</button>
           <label style="display:flex; align-items:center; gap:.4rem;
                         color:var(--muted); font-size:.7rem;
                         text-transform:uppercase; letter-spacing:.08em">
@@ -211,6 +212,29 @@
             <span><span class="sw margin"></span>Zona morta (margine)</span>
             <span><span class="sw roi"></span>ROI</span>
           </div>
+        </div>
+
+        <!-- pannello errore snapshot -->
+        <div id="snap-error" style="display:none; margin-top:.75rem;
+             padding:.85rem 1rem; background:#1a0f0f;
+             border:1px solid #5a3030; border-left:3px solid #aa3030;
+             border-radius:3px; font-size:.78rem; line-height:1.5;
+             color:#ffcccc">
+          <div id="snap-error-msg" style="font-weight:500"></div>
+          <div id="snap-error-hint" style="color:#cc8888; margin-top:.4rem;
+               font-size:.72rem"></div>
+          <details id="snap-error-detail" style="margin-top:.5rem;
+                   color:#aa6666; font-size:.7rem">
+            <summary style="cursor:pointer; user-select:none">
+              dettagli tecnici
+            </summary>
+            <pre id="snap-error-pre" style="white-space:pre-wrap;
+                 word-break:break-all; margin:.5rem 0 0;
+                 padding:.5rem; background:#000;
+                 border:1px solid #3a1a1a; border-radius:2px;
+                 font-size:.7rem; color:#cc9999;
+                 max-height:240px; overflow:auto"></pre>
+          </details>
         </div>
       </div>
 
@@ -542,21 +566,82 @@
   const autoCb = document.getElementById('auto-refresh');
   let timer = null;
 
+  const errBox  = document.getElementById('snap-error');
+  const errMsg  = document.getElementById('snap-error-msg');
+  const errHint = document.getElementById('snap-error-hint');
+  const errPre  = document.getElementById('snap-error-pre');
+
+  function showSnapError(payload, fallbackText) {
+    errBox.style.display = 'block';
+    if (payload && typeof payload === 'object') {
+      errMsg.textContent  = '✗ ' + (payload.error || 'errore sconosciuto');
+      errHint.textContent = payload.hint || '';
+      errPre.textContent  = JSON.stringify(payload, null, 2);
+    } else {
+      errMsg.textContent  = '✗ ' + (fallbackText || 'errore');
+      errHint.textContent = '';
+      errPre.textContent  = fallbackText || '';
+    }
+  }
+  function clearSnapError() {
+    errBox.style.display = 'none';
+  }
+
   async function loadSnapshot() {
     if (!FRIGATE_OK) return;
     try {
-      const url = '/api/snapshot?_=' + Date.now();
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const r = await fetch('/api/snapshot?_=' + Date.now());
+      const ct = r.headers.get('Content-Type') || '';
+      if (!r.ok) {
+        let payload = null;
+        if (ct.includes('json')) {
+          try { payload = await r.json(); } catch (_) {}
+        }
+        if (payload) showSnapError(payload);
+        else         showSnapError(null, 'HTTP ' + r.status);
+        refreshMeta.textContent = '✗ HTTP ' + r.status;
+        return;
+      }
       const blob = await r.blob();
       const old = img.src;
       img.src = URL.createObjectURL(blob);
       if (old.startsWith('blob:')) URL.revokeObjectURL(old);
       refreshMeta.textContent = 'aggiornato ' + new Date().toLocaleTimeString();
+      clearSnapError();
     } catch (e) {
+      showSnapError(null, e.message);
       refreshMeta.textContent = '✗ ' + e.message;
     }
   }
+
+  document.getElementById('btn-diag').addEventListener('click', async () => {
+    refreshMeta.textContent = 'diagnostica in corso…';
+    try {
+      const r = await fetch('/api/snapshot/diag');
+      const d = await r.json();
+      // costruiamo un messaggio leggibile dai 3 steps
+      let msg = d.ok ? '✓ Frigate raggiungibile' : '✗ Diagnostica fallita';
+      let hint = '';
+      for (const st of (d.steps || [])) {
+        if (st.error) {
+          msg = `✗ ${st.step}: ${st.error}`;
+          break;
+        }
+        if (st.cameras_found && st.cameras_found.length) {
+          if (!st.cameras_found.includes(d.configured_camera)) {
+            msg  = `✗ CAMERA_NAME="${d.configured_camera}" non esiste in Frigate`;
+            hint = 'Camere disponibili in Frigate: ' +
+                   st.cameras_found.join(', ');
+            break;
+          }
+        }
+      }
+      showSnapError({error: msg, hint: hint, ...d});
+      refreshMeta.textContent = '';
+    } catch (e) {
+      showSnapError(null, 'diag: ' + e.message);
+    }
+  });
   img.addEventListener('load', resizeCanvas);
 
   function startAuto() {

@@ -334,6 +334,26 @@ def create_app(store, tracker):
             "current": Settings.current(),
         })
 
+    def _fetch_frigate(path):
+        """Tenta una GET verso Frigate e ritorna (status, content_type, data, error)."""
+        url = f"{Config.FRIGATE_URL}{path}"
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "frigate-counter"})
+        try:
+            with urllib.request.urlopen(req, timeout=4) as r:
+                return r.status, r.headers.get("Content-Type", ""), r.read(), None, url
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read(512).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            return e.code, "", b"", f"HTTP {e.code} {e.reason}: {body}", url
+        except urllib.error.URLError as e:
+            return 0, "", b"", f"network: {e.reason}", url
+        except Exception as e:
+            return 0, "", b"", f"{type(e).__name__}: {e}", url
+
     @app.route("/api/snapshot")
     @login_required
     def api_snapshot():
@@ -341,21 +361,111 @@ def create_app(store, tracker):
         if not Config.FRIGATE_URL:
             return jsonify({
                 "ok": False,
-                "error": "FRIGATE_URL non configurata",
+                "error": "FRIGATE_URL non configurata (vedi env del container)",
+                "hint": "Es: FRIGATE_URL=http://192.168.1.10:5000",
             }), 503
-        url = f"{Config.FRIGATE_URL}/api/{Config.CAMERA}/latest.jpg"
-        try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": "frigate-counter"})
-            with urllib.request.urlopen(req, timeout=4) as r:
-                data = r.read()
-                ctype = r.headers.get("Content-Type", "image/jpeg")
-        except urllib.error.URLError as e:
-            return jsonify({"ok": False, "error": f"frigate unreachable: {e}"}), 502
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
-        return Response(data, mimetype=ctype, headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
+
+        # Frigate cambia path tra versioni. Proviamo i due più comuni in ordine.
+        candidates = [
+            f"/api/{Config.CAMERA}/latest.jpg",     # storico, Frigate 0.10+
+            f"/api/{Config.CAMERA}/snapshot.jpg",   # alcuni setup
+        ]
+        errors = []
+        for path in candidates:
+            status, ctype, data, err, full_url = _fetch_frigate(path)
+            if err is None and status == 200 and data:
+                return Response(data, mimetype=ctype or "image/jpeg",
+                                headers={"Cache-Control": "no-store"})
+            print(f"[snapshot] FAIL {full_url} -> "
+                  f"status={status} err={err}", flush=True)
+            errors.append({"url": full_url, "status": status, "error": err})
+
+        # Tutti i tentativi falliti
+        last = errors[-1]
+        body = {
+            "ok": False,
+            "error": last["error"] or f"HTTP {last['status']}",
+            "tried": errors,
+            "frigate_url": Config.FRIGATE_URL,
+            "camera": Config.CAMERA,
+            "hint": _snapshot_hint(errors),
+        }
+        # 502 se è errore rete, 404/etc passa attraverso
+        status_out = 502 if last["status"] == 0 else last["status"]
+        return jsonify(body), status_out
+
+    def _snapshot_hint(errors):
+        """Suggerimento testuale in base al tipo di errore."""
+        last = errors[-1]
+        s, e = last["status"], (last["error"] or "")
+        if "Connection refused" in e:
+            return ("Connection refused: il container counter raggiunge il "
+                    "FRIGATE_URL ma sulla porta non risponde nessuno. "
+                    "Verifica che Frigate sia in ascolto su quella porta.")
+        if "Name or service not known" in e or "nodename nor servname" in e:
+            return ("DNS / hostname non risolto. Se Frigate è in un altro "
+                    "container, usa il nome del servizio Docker "
+                    "(es. http://frigate:5000) e mettilo nella stessa "
+                    "network del compose.")
+        if "timed out" in e or "timeout" in e.lower():
+            return ("Timeout: il container vede l'IP ma la risposta non "
+                    "arriva entro 4s. Controlla firewall, VPN, IP corretto.")
+        if s == 404:
+            return (f"Frigate risponde, ma 404 sulla camera '{Config.CAMERA}'. "
+                    "Controlla che CAMERA_NAME corrisponda ESATTAMENTE al nome "
+                    "in Frigate (case-sensitive, niente spazi).")
+        if s == 401 or s == 403:
+            return ("Frigate richiede autenticazione. Questa funzione non "
+                    "supporta auth Frigate al momento — disabilitala in "
+                    "Frigate o esponi un endpoint interno aperto.")
+        if s in (502, 503, 504):
+            return "Frigate non pronto / reverse proxy a vuoto."
+        return ("Apri il container counter (docker exec -it ...) e prova: "
+                f"curl -v {Config.FRIGATE_URL}/api/{Config.CAMERA}/latest.jpg")
+
+    @app.route("/api/snapshot/diag")
+    @login_required
+    def api_snapshot_diag():
+        """Diagnostica passo-passo per debug della connessione a Frigate."""
+        if not Config.FRIGATE_URL:
+            return jsonify({"ok": False, "error": "FRIGATE_URL vuota"}), 503
+
+        steps = []
+        # 1) /api/version (presente in tutte le versioni di Frigate)
+        s, ct, d, err, url = _fetch_frigate("/api/version")
+        steps.append({
+            "step": "frigate /api/version",
+            "url": url, "status": s, "content_type": ct, "error": err,
+            "body": d[:200].decode("utf-8", errors="replace") if d else "",
+        })
+        # 2) /api/config (per leggere le camere disponibili)
+        s, ct, d, err, url = _fetch_frigate("/api/config")
+        cams = []
+        if d and not err:
+            try:
+                import json as _json
+                cfg = _json.loads(d.decode("utf-8", errors="replace"))
+                cams = list((cfg.get("cameras") or {}).keys())
+            except Exception:
+                pass
+        steps.append({
+            "step": "frigate /api/config (cameras list)",
+            "url": url, "status": s, "error": err, "cameras_found": cams,
+        })
+        # 3) latest.jpg
+        s, ct, d, err, url = _fetch_frigate(
+            f"/api/{Config.CAMERA}/latest.jpg")
+        steps.append({
+            "step": "snapshot latest.jpg",
+            "url": url, "status": s, "content_type": ct, "error": err,
+            "bytes": len(d),
+        })
+        return jsonify({
+            "ok": all(st.get("error") is None and (st.get("status") or 0) < 400
+                      for st in steps),
+            "frigate_url": Config.FRIGATE_URL,
+            "configured_camera": Config.CAMERA,
+            "steps": steps,
         })
 
     return app
