@@ -276,17 +276,62 @@ class Store:
         self.lock = threading.Lock()
         self.counts = self._load_counts()
         self.pg = None
+        self.reconnect_postgres()
+
+    def reconnect_postgres(self):
+        """Riapri la connessione PG con i Config.DB_* correnti. Idempotente.
+
+        Chiude prima un eventuale pool precedente. Se la nuova configurazione
+        è vuota, lascia self.pg = None (modalità solo JSON).
+        """
+        if self.pg is not None:
+            try:
+                self.pg.pool.closeall()
+            except Exception:
+                pass
+            self.pg = None
         if Config.postgres_enabled():
             try:
                 self.pg = PostgresStore()
-                print("[storage] Postgres attivo", flush=True)
+                print("[storage] Postgres connesso", flush=True)
+                return True, "connesso"
             except Exception as e:
                 print(f"[storage] Postgres NON disponibile, "
                       f"fallback solo JSON: {e}", flush=True)
                 self.pg = None
-        else:
-            print("[storage] Postgres non configurato, uso solo JSON",
-                  flush=True)
+                return False, str(e)
+        print("[storage] Postgres non configurato, uso solo JSON",
+              flush=True)
+        return False, "non configurato"
+
+    @staticmethod
+    def test_postgres_connection(host, port, name, user, password,
+                                 schema, table, sslmode):
+        """Tenta una connessione di prova SENZA toccare lo store corrente."""
+        import psycopg2
+        try:
+            conn = psycopg2.connect(
+                host=host, port=int(port), dbname=name,
+                user=user, password=password, sslmode=sslmode,
+                connect_timeout=5,
+            )
+            with conn.cursor() as cur:
+                cur.execute("SELECT version()")
+                version = cur.fetchone()[0]
+                cur.execute(
+                    "SELECT to_regclass(%s)",
+                    (f'"{schema}"."{table}"',),
+                )
+                table_exists = cur.fetchone()[0] is not None
+            conn.close()
+            return {
+                "ok": True,
+                "version": version,
+                "table_exists": table_exists,
+                "table_full": f'"{schema}"."{table}"',
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
     # ---- counts cumulativi ----
 

@@ -49,6 +49,13 @@ class Config:
     FRIGATE_URL = os.environ.get("FRIGATE_URL", "").rstrip("/")
     SNAPSHOT_REFRESH_SEC = float(os.environ.get("SNAPSHOT_REFRESH_SEC", "3"))
 
+    # ---- Webhook (notifica per ogni enter/exit) ----
+    WEBHOOK_ENABLED = os.environ.get("WEBHOOK_ENABLED", "0") == "1"
+    WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").strip()
+    WEBHOOK_HEADERS = os.environ.get("WEBHOOK_HEADERS", "").strip()   # JSON string
+    WEBHOOK_TIMEOUT = float(os.environ.get("WEBHOOK_TIMEOUT", "4"))
+    WEBHOOK_RETRY = int(os.environ.get("WEBHOOK_RETRY", "1"))
+
     # ---- Storage JSON (sempre attivo) ----
     LOG_DIR = os.environ.get("LOG_DIR", "/data")
     COUNTS_FILE = os.environ.get("COUNTS_FILE", f"{LOG_DIR}/counts.json")

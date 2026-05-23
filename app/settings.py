@@ -1,9 +1,15 @@
 """Runtime settings: sovrascrivono i default da env e sono persistite su file.
 
-Esempio: l'utente sposta la linea di attraversamento dalla UI -> chiamiamo
-`Settings.update({'LINE_Y': 0.62})`; il nuovo valore viene scritto su
-`settings.json` E assegnato a `Config.LINE_Y` (le assegnazioni a class attr
-sono atomiche in Python, ok lette dal thread MQTT senza lock).
+Il file `settings.json` (in LOG_DIR) è la fonte di verità a runtime: viene
+caricato all'avvio, e ogni volta che l'utente salva dalla UI viene
+sovrascritto con il dump completo dei parametri editabili.
+
+I campi `secret` (password) sono ritornati come "***" nelle GET pubbliche;
+quando il client invia "***" come valore in una POST, viene interpretato come
+"non cambiare". Stringa vuota invece equivale a "svuotare".
+
+Alcuni cambi richiedono restart del container (es. host MQTT, porta web):
+sono marcati `restart_needed=True` e l'API lo segnala al client.
 """
 
 import json
@@ -13,64 +19,141 @@ import threading
 from app.config import Config
 
 
-# Chiavi modificabili dalla UI, con cast e range di validazione.
-# (key, type, min, max)
+# Tabella unica di tutti i parametri modificabili da UI.
+# Ogni voce: type, min, max, group, restart_needed, secret
+# - type: "str" | "int" | "float" | "bool" | "url" | "secret" | "json"
+# - group: stringa per raggruppare nella UI
+# - restart_needed: True se cambiarlo richiede restart del container
+# - secret: True se va mascherato in GET (password etc.)
 EDITABLE = {
-    # ---- modalità ----
-    "COUNT_MODE":           ("str",   None, None),  # full_motion | line_cross
-    "ENTER_DIRECTION":      ("str",   None, None),  # up | down
-    "POINT_MODE":           ("str",   None, None),  # bottom | center
+    # ===== Modalità di conteggio =====
+    "COUNT_MODE":           {"type": "str",   "group": "detection"},
+    "ENTER_DIRECTION":      {"type": "str",   "group": "detection"},
+    "POINT_MODE":           {"type": "str",   "group": "detection"},
 
-    # ---- linea (line_cross) ----
-    "LINE_Y":               ("float", 0.0,  1.0),
-    "LINE_MARGIN":          ("float", 0.0,  0.45),
+    # ===== Linea =====
+    "LINE_Y":               {"type": "float", "min": 0.0, "max": 1.0,  "group": "line"},
+    "LINE_MARGIN":          {"type": "float", "min": 0.0, "max": 0.45, "group": "line"},
 
-    # ---- ROI (rettangolo "porta") ----
-    "MOTION_X1":            ("float", 0.0,  1.0),
-    "MOTION_X2":            ("float", 0.0,  1.0),
-    "MOTION_Y1":            ("float", 0.0,  1.0),
-    "MOTION_Y2":            ("float", 0.0,  1.0),
+    # ===== ROI =====
+    "MOTION_X1":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
+    "MOTION_X2":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
+    "MOTION_Y1":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
+    "MOTION_Y2":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
 
-    # ---- soglie movimento (full_motion) ----
-    "MOTION_MIN_POINTS":    ("int",   2,    50),
-    "MOTION_MIN_DELTA_Y":   ("float", 0.0,  1.0),
-    "MOTION_MIN_SPAN_Y":    ("float", 0.0,  1.0),
-    "MOTION_MIN_NET_RATIO": ("float", 0.0,  1.0),
+    # ===== Soglie full_motion =====
+    "MOTION_MIN_POINTS":    {"type": "int",   "min": 2,   "max": 50,   "group": "thresholds"},
+    "MOTION_MIN_DELTA_Y":   {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
+    "MOTION_MIN_SPAN_Y":    {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
+    "MOTION_MIN_NET_RATIO": {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
 
-    # ---- jitter ----
-    "JITTER_DISTANCE":      ("float", 0.0,  0.2),
+    # ===== Tracking =====
+    "JITTER_DISTANCE":      {"type": "float", "min": 0.0, "max": 0.2,   "group": "tracking"},
+    "TRACK_TTL":            {"type": "float", "min": 1.0, "max": 300.0, "group": "tracking"},
+    "TRACK_POINTS_MAX":     {"type": "int",   "min": 10,  "max": 2000,  "group": "tracking"},
 
-    # ---- tracking ----
-    "TRACK_TTL":            ("float", 1.0,  300.0),
-    "TRACK_POINTS_MAX":     ("int",   10,   2000),
+    # ===== Camera =====
+    "CAMERA":               {"type": "str",   "group": "camera"},
+    "FRAME_W":              {"type": "int",   "min": 320,  "max": 7680, "group": "camera"},
+    "FRAME_H":              {"type": "int",   "min": 240,  "max": 4320, "group": "camera"},
+    "REQUIRED_ZONE":        {"type": "str",   "group": "camera"},
+
+    # ===== MQTT (restart) =====
+    "MQTT_HOST":            {"type": "str",    "group": "mqtt", "restart_needed": True},
+    "MQTT_PORT":            {"type": "int",    "min": 1, "max": 65535,
+                             "group": "mqtt", "restart_needed": True},
+    "MQTT_USER":            {"type": "str",    "group": "mqtt", "restart_needed": True},
+    "MQTT_PASS":            {"type": "secret", "group": "mqtt", "restart_needed": True},
+
+    # ===== Frigate (snapshot) =====
+    "FRIGATE_URL":          {"type": "url",   "group": "frigate"},
+    "SNAPSHOT_REFRESH_SEC": {"type": "float", "min": 0.5, "max": 60, "group": "frigate"},
+
+    # ===== PostgreSQL =====
+    "DB_HOST":              {"type": "str",    "group": "postgres"},
+    "DB_PORT":              {"type": "int",    "min": 1, "max": 65535, "group": "postgres"},
+    "DB_NAME":              {"type": "str",    "group": "postgres"},
+    "DB_USER":              {"type": "str",    "group": "postgres"},
+    "DB_PASS":              {"type": "secret", "group": "postgres"},
+    "DB_SCHEMA":            {"type": "str",    "group": "postgres"},
+    "DB_TABLE":             {"type": "str",    "group": "postgres"},
+    "DB_SSLMODE":           {"type": "str",    "group": "postgres"},
+
+    # ===== Webhook =====
+    "WEBHOOK_ENABLED":      {"type": "bool",   "group": "webhook"},
+    "WEBHOOK_URL":          {"type": "url",    "group": "webhook"},
+    "WEBHOOK_HEADERS":      {"type": "json",   "group": "webhook"},  # dict serializzato
+    "WEBHOOK_TIMEOUT":      {"type": "float",  "min": 0.5, "max": 30, "group": "webhook"},
+    "WEBHOOK_RETRY":        {"type": "int",    "min": 0,   "max": 5,  "group": "webhook"},
 }
 
 _VALID_COUNT_MODES = {"full_motion", "line_cross"}
 _VALID_DIRECTIONS  = {"up", "down"}
 _VALID_POINT_MODES = {"bottom", "center"}
+_VALID_SSLMODE     = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
+
+SECRET_MASK = "***"
 
 
 def _coerce(key, raw):
-    """Converte raw nel tipo giusto e valida i range."""
-    typ, lo, hi = EDITABLE[key]
-    if typ == "str":
-        v = str(raw).strip().lower()
-        if key == "COUNT_MODE" and v not in _VALID_COUNT_MODES:
-            raise ValueError(f"COUNT_MODE must be one of {_VALID_COUNT_MODES}")
-        if key == "ENTER_DIRECTION" and v not in _VALID_DIRECTIONS:
-            raise ValueError(f"ENTER_DIRECTION must be one of {_VALID_DIRECTIONS}")
-        if key == "POINT_MODE" and v not in _VALID_POINT_MODES:
-            raise ValueError(f"POINT_MODE must be one of {_VALID_POINT_MODES}")
+    meta = EDITABLE[key]
+    typ = meta["type"]
+    if typ in ("str", "url", "secret"):
+        v = str(raw).strip() if raw is not None else ""
+        if key == "COUNT_MODE":
+            v = v.lower()
+            if v and v not in _VALID_COUNT_MODES:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_COUNT_MODES)}")
+        elif key == "ENTER_DIRECTION":
+            v = v.lower()
+            if v and v not in _VALID_DIRECTIONS:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_DIRECTIONS)}")
+        elif key == "POINT_MODE":
+            v = v.lower()
+            if v and v not in _VALID_POINT_MODES:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_POINT_MODES)}")
+        elif key == "DB_SSLMODE":
+            v = v.lower()
+            if v and v not in _VALID_SSLMODE:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_SSLMODE)}")
+        elif typ == "url" and v:
+            if not (v.startswith("http://") or v.startswith("https://")):
+                raise ValueError("deve iniziare con http:// o https://")
+            v = v.rstrip("/")
         return v
+    if typ == "bool":
+        if isinstance(raw, bool):
+            return raw
+        s = str(raw).strip().lower()
+        return s in ("1", "true", "yes", "on")
+    if typ == "json":
+        if raw is None or raw == "":
+            return ""
+        if isinstance(raw, str):
+            s = raw.strip()
+            if not s:
+                return ""
+            try:
+                json.loads(s)
+            except Exception as e:
+                raise ValueError(f"JSON non valido: {e}")
+            return s
+        return json.dumps(raw)
+    # int / float numeric
     if typ == "int":
         v = int(float(raw))
     else:
         v = float(raw)
+    lo, hi = meta.get("min"), meta.get("max")
     if lo is not None and v < lo:
-        raise ValueError(f"{key} < {lo}")
+        raise ValueError(f"< {lo}")
     if hi is not None and v > hi:
-        raise ValueError(f"{key} > {hi}")
+        raise ValueError(f"> {hi}")
     return v
+
+
+def _is_secret(key):
+    return EDITABLE[key]["type"] == "secret"
 
 
 class Settings:
@@ -78,7 +161,7 @@ class Settings:
 
     @classmethod
     def load(cls):
-        """All'avvio: legge settings.json e sovrascrive Config."""
+        """All'avvio: legge settings.json e sovrascrive Config.*."""
         path = Config.SETTINGS_FILE
         if not os.path.exists(path):
             print("[settings] nessun settings.json, uso default da env",
@@ -91,40 +174,65 @@ class Settings:
             print(f"[settings] errore lettura {path}: {e}", flush=True)
             return
 
-        applied = []
+        applied = 0
         for k, v in data.items():
             if k not in EDITABLE:
                 continue
             try:
                 value = _coerce(k, v)
             except Exception as e:
-                print(f"[settings] '{k}' non valido in file: {e}", flush=True)
+                print(f"[settings] '{k}' non valido nel file: {e}",
+                      flush=True)
                 continue
             setattr(Config, k, value)
-            applied.append(f"{k}={value}")
-        print(f"[settings] caricati: {', '.join(applied) or 'nessuno'}",
+            applied += 1
+        print(f"[settings] caricati {applied} parametri da {path}",
               flush=True)
 
     @classmethod
-    def current(cls):
+    def current(cls, mask_secrets=True):
         """Snapshot di TUTTE le chiavi modificabili."""
-        return {k: getattr(Config, k) for k in EDITABLE.keys()}
+        out = {}
+        for k in EDITABLE.keys():
+            v = getattr(Config, k, None)
+            if mask_secrets and _is_secret(k):
+                out[k] = SECRET_MASK if v else ""
+            else:
+                out[k] = v
+        return out
+
+    @classmethod
+    def schema(cls):
+        """Schema dei campi editabili (per la UI)."""
+        return {k: dict(v) for k, v in EDITABLE.items()}
 
     @classmethod
     def update(cls, new_values: dict):
-        """Aggiorna in memoria + persiste su disco. Ritorna le chiavi cambiate."""
+        """Aggiorna in memoria + persiste su disco.
+
+        Ritorna dict {changed: [...], restart_needed: bool}.
+        """
         coerced = {}
+        errors = {}
+
         for k, v in new_values.items():
             if k not in EDITABLE:
                 continue
-            if v is None or v == "":
+            # campi secret: "***" significa "non cambiare"
+            if _is_secret(k) and v == SECRET_MASK:
+                continue
+            # None o omesso: non cambiare
+            if v is None:
                 continue
             try:
                 coerced[k] = _coerce(k, v)
             except Exception as e:
-                raise ValueError(f"{k}: {e}")
+                errors[k] = str(e)
 
-        # sanity check: MOTION_X1 < MOTION_X2, MOTION_Y1 < MOTION_Y2
+        if errors:
+            raise ValueError("; ".join(f"{k}: {e}" for k, e in errors.items()))
+
+        # sanity checks incrociati
         x1 = coerced.get("MOTION_X1", Config.MOTION_X1)
         x2 = coerced.get("MOTION_X2", Config.MOTION_X2)
         y1 = coerced.get("MOTION_Y1", Config.MOTION_Y1)
@@ -134,20 +242,25 @@ class Settings:
         if y1 >= y2:
             raise ValueError("MOTION_Y1 deve essere < MOTION_Y2")
 
+        restart_needed = False
+
         with cls._lock:
             for k, v in coerced.items():
+                old = getattr(Config, k, None)
+                if old != v and EDITABLE[k].get("restart_needed"):
+                    restart_needed = True
                 setattr(Config, k, v)
-            # persisti SEMPRE il dump completo
-            payload = cls.current()
-            tmp = Config.SETTINGS_FILE + ".tmp"
-            try:
-                os.makedirs(os.path.dirname(Config.SETTINGS_FILE) or ".",
-                            exist_ok=True)
-                with open(tmp, "w", encoding="utf-8") as f:
-                    json.dump(payload, f, indent=2, ensure_ascii=False)
-                os.replace(tmp, Config.SETTINGS_FILE)
-            except Exception as e:
-                print(f"[settings] errore salvataggio: {e}", flush=True)
-                raise
 
-        return list(coerced.keys())
+            payload = cls.current(mask_secrets=False)
+            tmp = Config.SETTINGS_FILE + ".tmp"
+            os.makedirs(os.path.dirname(Config.SETTINGS_FILE) or ".",
+                        exist_ok=True)
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False,
+                          sort_keys=True)
+            os.replace(tmp, Config.SETTINGS_FILE)
+
+        return {
+            "changed": list(coerced.keys()),
+            "restart_needed": restart_needed,
+        }

@@ -5,6 +5,7 @@ import time
 
 import paho.mqtt.client as mqtt
 
+from app import webhook
 from app.config import Config
 from app.motion import classify, point_from_box
 
@@ -50,6 +51,23 @@ def run(store, tracker):
             "id": evt_id, "ts": ts, "type": result,
             "start": start_pt, "end": end_pt,
             "method": method, "reason": reason,
+        })
+        webhook.notify({
+            "event":       result,
+            "camera":      Config.CAMERA,
+            "ts":          ts,
+            "datetime":    time.strftime("%Y-%m-%d %H:%M:%S",
+                                         time.localtime(ts)),
+            "occupancy":   snap["occupancy"],
+            "enter_total": snap["enter"],
+            "exit_total":  snap["exit"],
+            "method":      method,
+            "event_id":    evt_id,
+            "start":       {"x": round(start_pt[0], 4),
+                            "y": round(start_pt[1], 4)},
+            "end":         {"x": round(end_pt[0], 4),
+                            "y": round(end_pt[1], 4)},
+            "reason":      reason,
         })
         return snap
 

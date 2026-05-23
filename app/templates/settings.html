@@ -343,15 +343,22 @@
     <form class="form-panel" id="settings-form" onsubmit="return false">
 
       <div class="group">
-        <h3>Modalità</h3>
+        <h3>Camera</h3>
         <div class="field">
-          <label>Algoritmo di conteggio
-            <span class="desc">line_cross = richiede attraversamento netto (raccomandato)</span>
+          <label>Nome camera in Frigate
+            <span class="desc">deve coincidere con il nome in frigate.yml</span>
           </label>
-          <select name="COUNT_MODE">
-            <option value="line_cross">line_cross</option>
-            <option value="full_motion">full_motion</option>
-          </select>
+          <input type="text" name="CAMERA" id="camera-input"
+                 list="camera-list" autocomplete="off">
+          <datalist id="camera-list"></datalist>
+        </div>
+        <div style="margin-top:-.25rem">
+          <button class="btn" type="button" id="btn-load-cameras"
+                  style="font-size:.65rem; padding:.35rem .7rem">
+            ↻ Carica camere da Frigate
+          </button>
+          <span id="cameras-msg" style="color:var(--dim); font-size:.7rem;
+                margin-left:.5rem"></span>
         </div>
         <div class="field">
           <label>Direzione ingresso
@@ -369,6 +376,19 @@
           <select name="POINT_MODE">
             <option value="bottom">bottom</option>
             <option value="center">center</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Modalità conteggio</h3>
+        <div class="field">
+          <label>Algoritmo
+            <span class="desc">line_cross = richiede attraversamento netto (raccomandato)</span>
+          </label>
+          <select name="COUNT_MODE">
+            <option value="line_cross">line_cross</option>
+            <option value="full_motion">full_motion</option>
           </select>
         </div>
       </div>
@@ -469,6 +489,196 @@
           <label>TRACK_POINTS_MAX <span class="desc">cap punti per track</span></label>
           <input type="number" name="TRACK_POINTS_MAX" min="10" max="2000" step="10">
         </div>
+      </div>
+
+      <!-- ============ MQTT ============ -->
+      <div class="group">
+        <h3>MQTT broker <span style="color:var(--dim); font-weight:400;
+          text-transform:none; letter-spacing:0">(richiede restart)</span></h3>
+        <div class="field">
+          <label>MQTT_HOST <span class="desc">hostname / IP del broker Frigate</span></label>
+          <input type="text" name="MQTT_HOST">
+        </div>
+        <div class="field">
+          <label>MQTT_PORT</label>
+          <input type="number" name="MQTT_PORT" min="1" max="65535">
+        </div>
+        <div class="field">
+          <label>MQTT_USER <span class="desc">vuoto = no auth</span></label>
+          <input type="text" name="MQTT_USER" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>MQTT_PASS</label>
+          <input type="password" name="MQTT_PASS" autocomplete="new-password"
+                 placeholder="•••">
+        </div>
+      </div>
+
+      <!-- ============ FRIGATE ============ -->
+      <div class="group">
+        <h3>Frigate API</h3>
+        <div class="field">
+          <label>FRIGATE_URL <span class="desc">es. http://frigate:5000</span></label>
+          <input type="url" name="FRIGATE_URL">
+        </div>
+        <div class="field">
+          <label>SNAPSHOT_REFRESH_SEC <span class="desc">intervallo auto-refresh</span></label>
+          <input type="number" name="SNAPSHOT_REFRESH_SEC" min="0.5" max="60" step="0.5">
+        </div>
+      </div>
+
+      <!-- ============ POSTGRES ============ -->
+      <div class="group">
+        <h3>PostgreSQL <span id="pg-status-badge"
+              style="font-size:.6rem; padding:.15rem .5rem; border-radius:2px;
+                     vertical-align:middle; margin-left:.4rem;
+                     background:var(--panel3); color:var(--dim);
+                     border:1px solid var(--border)">non connesso</span></h3>
+        <details style="background:var(--panel2); border:1px solid var(--border);
+                        border-left:3px solid #4fc3f7; border-radius:3px;
+                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
+                        color:var(--text2)">
+          <summary style="cursor:pointer; user-select:none; color:var(--text);
+                          font-weight:500">Cos'è e come si usa</summary>
+          <p style="margin:.6rem 0 0; color:var(--muted)">
+            Storage esterno per gli eventi storici. Se lo configuri, ogni
+            ingresso/uscita finisce in tabella e la dashboard storica diventa
+            molto più rapida con grandi volumi. Lascia i campi vuoti per
+            restare sul solo file <code style="background:var(--bg);
+            padding:.05rem .3rem; border-radius:2px;
+            border:1px solid var(--border)">events.jsonl</code> locale.
+          </p>
+          <p style="margin:.5rem 0 0; color:var(--muted)">
+            La tabella viene creata automaticamente al primo connect se
+            l'utente DB ha permessi di CREATE. In alternativa,
+            <strong>clicca "Mostra SQL"</strong> qui sotto per copiarlo
+            ed eseguirlo manualmente.
+          </p>
+        </details>
+        <div class="field">
+          <label>DB_HOST</label>
+          <input type="text" name="DB_HOST" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>DB_PORT</label>
+          <input type="number" name="DB_PORT" min="1" max="65535">
+        </div>
+        <div class="field">
+          <label>DB_NAME</label>
+          <input type="text" name="DB_NAME" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>DB_USER</label>
+          <input type="text" name="DB_USER" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>DB_PASS</label>
+          <input type="password" name="DB_PASS" autocomplete="new-password"
+                 placeholder="•••">
+        </div>
+        <div class="field">
+          <label>DB_SCHEMA</label>
+          <input type="text" name="DB_SCHEMA" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>DB_TABLE</label>
+          <input type="text" name="DB_TABLE" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>DB_SSLMODE</label>
+          <select name="DB_SSLMODE">
+            <option value="disable">disable</option>
+            <option value="allow">allow</option>
+            <option value="prefer">prefer</option>
+            <option value="require">require</option>
+            <option value="verify-ca">verify-ca</option>
+            <option value="verify-full">verify-full</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem">
+          <button class="btn" type="button" id="btn-db-test"
+                  style="font-size:.65rem; padding:.4rem .8rem">
+            ↻ Testa connessione
+          </button>
+          <button class="btn" type="button" id="btn-db-sql"
+                  style="font-size:.65rem; padding:.4rem .8rem">
+            ▤ Mostra SQL
+          </button>
+        </div>
+        <div id="db-feedback" style="margin-top:.5rem; font-size:.72rem;
+             color:var(--muted); line-height:1.5; word-break:break-word"></div>
+      </div>
+
+      <!-- ============ WEBHOOK ============ -->
+      <div class="group">
+        <h3>Webhook</h3>
+        <details style="background:var(--panel2); border:1px solid var(--border);
+                        border-left:3px solid #ffeb3b; border-radius:3px;
+                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
+                        color:var(--text2)">
+          <summary style="cursor:pointer; user-select:none; color:var(--text);
+                          font-weight:500">Cos'è il webhook</summary>
+          <p style="margin:.6rem 0 0; color:var(--muted)">
+            Ogni volta che il sistema conta un ingresso o un'uscita, fa una
+            <strong>HTTP POST</strong> al tuo URL con un JSON che contiene
+            evento, camera, timestamp, occupancy, totali, coordinate. Utile
+            per integrarsi con Home Assistant, Node-RED, Slack, n8n, ecc.
+          </p>
+          <pre style="margin:.5rem 0 0; padding:.5rem; background:var(--bg);
+                      border:1px solid var(--border); border-radius:2px;
+                      font-size:.65rem; color:var(--text2);
+                      overflow-x:auto">{
+  "event": "enter",
+  "camera": "ingresso",
+  "ts": 1716470000.123,
+  "datetime": "2026-05-23 18:42:13",
+  "occupancy": 4,
+  "enter_total": 1247,
+  "exit_total": 1243,
+  "method": "line_cross",
+  "event_id": "...",
+  "start": {"x": 0.45, "y": 0.10},
+  "end":   {"x": 0.43, "y": 0.88},
+  "reason": "..."
+}</pre>
+        </details>
+        <div class="field">
+          <label>Abilitato</label>
+          <select name="WEBHOOK_ENABLED">
+            <option value="false">no</option>
+            <option value="true">sì</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>WEBHOOK_URL</label>
+          <input type="url" name="WEBHOOK_URL"
+                 placeholder="https://example.com/hook">
+        </div>
+        <div class="field" style="grid-template-columns:1fr">
+          <label>WEBHOOK_HEADERS <span class="desc">JSON di header extra (es. Authorization, X-Token)</span></label>
+        </div>
+        <textarea name="WEBHOOK_HEADERS" rows="3"
+                  placeholder='{"Authorization": "Bearer abc123"}'
+                  style="width:100%; background:var(--panel2); color:var(--text);
+                         border:1px solid var(--border); border-radius:3px;
+                         padding:.5rem .6rem; font-family:inherit; font-size:.75rem;
+                         resize:vertical"></textarea>
+        <div class="field">
+          <label>WEBHOOK_TIMEOUT <span class="desc">secondi</span></label>
+          <input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5">
+        </div>
+        <div class="field">
+          <label>WEBHOOK_RETRY <span class="desc">retry per errori 5xx / rete</span></label>
+          <input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1">
+        </div>
+        <div style="display:flex; gap:.5rem; margin-top:.5rem">
+          <button class="btn" type="button" id="btn-webhook-test"
+                  style="font-size:.65rem; padding:.4rem .8rem">
+            ↻ Invia evento di test
+          </button>
+        </div>
+        <div id="webhook-feedback" style="margin-top:.5rem; font-size:.72rem;
+             color:var(--muted); line-height:1.5; word-break:break-word"></div>
       </div>
 
       <div class="actions-bar">
@@ -891,12 +1101,21 @@
       });
       const d = await r.json();
       if (r.ok && d.ok) {
-        fb.textContent = '✓ salvato (' + d.changed.length + ' parametri)';
+        let msg = '✓ salvato (' + d.changed.length + ' parametri)';
+        if (d.postgres_reconnect) {
+          msg += d.postgres_reconnect.ok
+            ? ' · Postgres riconnesso'
+            : ' · Postgres NON connesso: ' + d.postgres_reconnect.message;
+        }
+        if (d.restart_needed) {
+          msg += ' · ⚠ alcuni parametri richiedono restart del container';
+        }
+        fb.textContent = msg;
         fb.className = 'feedback ok';
-        // refresh dei valori dal server (in caso di clamping)
         Object.assign(s, d.current);
         Object.assign(initial, d.current);
         setFormFromState();
+        updatePgBadge(d.postgres_reconnect);
       } else {
         fb.textContent = '✗ ' + (d.error || 'errore');
         fb.className = 'feedback err';
@@ -904,6 +1123,133 @@
     } catch (e) {
       fb.textContent = '✗ ' + e.message;
       fb.className = 'feedback err';
+    }
+  });
+
+  // ===========================================================
+  //  CAMERA dropdown da Frigate
+  // ===========================================================
+  document.getElementById('btn-load-cameras').addEventListener('click',
+    async () => {
+      const msg = document.getElementById('cameras-msg');
+      msg.textContent = 'caricamento…';
+      try {
+        const r = await fetch('/api/frigate/cameras');
+        const d = await r.json();
+        if (!d.ok) {
+          msg.textContent = '✗ ' + (d.error || 'errore');
+          return;
+        }
+        const dl = document.getElementById('camera-list');
+        dl.innerHTML = '';
+        for (const c of d.cameras) {
+          const opt = document.createElement('option');
+          opt.value = c;
+          dl.appendChild(opt);
+        }
+        msg.textContent = '✓ ' + d.cameras.length + ' camere disponibili';
+      } catch (e) {
+        msg.textContent = '✗ ' + e.message;
+      }
+    });
+
+  // ===========================================================
+  //  POSTGRES test + show SQL
+  // ===========================================================
+  const dbFb = document.getElementById('db-feedback');
+  const pgBadge = document.getElementById('pg-status-badge');
+
+  function updatePgBadge(state) {
+    if (state && state.ok) {
+      pgBadge.textContent = 'connesso';
+      pgBadge.style.background = '#142a14';
+      pgBadge.style.color = '#88dd88';
+      pgBadge.style.borderColor = '#2a5a2a';
+    } else if (state && !state.ok) {
+      pgBadge.textContent = 'non connesso';
+      pgBadge.style.background = '#2a1414';
+      pgBadge.style.color = '#ffaaaa';
+      pgBadge.style.borderColor = '#5a3030';
+    }
+  }
+
+  document.getElementById('btn-db-test').addEventListener('click', async () => {
+    readFormToState();
+    dbFb.innerHTML = '<span style="color:var(--muted)">test in corso…</span>';
+    try {
+      const body = {
+        DB_HOST:   s.DB_HOST,    DB_PORT: s.DB_PORT,
+        DB_NAME:   s.DB_NAME,    DB_USER: s.DB_USER,
+        DB_PASS:   form.elements['DB_PASS'].value || '***',
+        DB_SCHEMA: s.DB_SCHEMA,  DB_TABLE: s.DB_TABLE,
+        DB_SSLMODE: s.DB_SSLMODE,
+      };
+      const r = await fetch('/api/db/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        const tbl = d.table_exists
+          ? '<span style="color:#88dd88">tabella ' + d.table_full + ' presente</span>'
+          : '<span style="color:#ffd58a">tabella ' + d.table_full + ' assente — verrà creata al primo connect</span>';
+        dbFb.innerHTML = '<span style="color:#88dd88">✓ ' + d.version + '</span><br>' + tbl;
+      } else {
+        dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + d.error + '</span>';
+      }
+    } catch (e) {
+      dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
+    }
+  });
+
+  document.getElementById('btn-db-sql').addEventListener('click', async () => {
+    try {
+      const r = await fetch('/api/db/sql');
+      const d = await r.json();
+      dbFb.innerHTML =
+        '<div style="margin-bottom:.4rem; color:var(--muted)">' +
+        'Copia ed esegui questo SQL come utente con permessi CREATE:' +
+        ' <button id="sql-copy" class="btn" style="font-size:.6rem; padding:.2rem .5rem; margin-left:.4rem">copia</button></div>' +
+        '<pre style="background:var(--bg); padding:.7rem; border:1px solid var(--border); border-radius:3px; max-height:280px; overflow:auto; font-size:.65rem; color:var(--text2); white-space:pre">' +
+        d.sql.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) +
+        '</pre>';
+      document.getElementById('sql-copy').onclick = async () => {
+        try { await navigator.clipboard.writeText(d.sql);
+              document.getElementById('sql-copy').textContent = 'copiato ✓'; }
+        catch (_) {}
+      };
+    } catch (e) {
+      dbFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
+    }
+  });
+
+  // ===========================================================
+  //  WEBHOOK test
+  // ===========================================================
+  const whFb = document.getElementById('webhook-feedback');
+  document.getElementById('btn-webhook-test').addEventListener('click', async () => {
+    // salva PRIMA così il test usa l'URL/headers correnti
+    readFormToState();
+    whFb.innerHTML = '<span style="color:var(--muted)">salvataggio e test…</span>';
+    try {
+      await fetch('/api/settings', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(s),
+      });
+      const r = await fetch('/api/webhook/test', {method: 'POST'});
+      const d = await r.json();
+      if (d.ok) {
+        whFb.innerHTML = '<span style="color:#88dd88">✓ ' + d.status +
+          ' da ' + d.url + '</span>' +
+          (d.body_preview
+            ? '<pre style="margin:.4rem 0 0; padding:.5rem; background:var(--bg); border:1px solid var(--border); border-radius:2px; font-size:.65rem; color:var(--text2); white-space:pre-wrap">' + d.body_preview + '</pre>'
+            : '');
+      } else {
+        whFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + (d.error || 'HTTP ' + d.status) + '</span>';
+      }
+    } catch (e) {
+      whFb.innerHTML = '<span style="color:#ffaaaa">✗ ' + e.message + '</span>';
     }
   });
 
@@ -967,6 +1313,7 @@
   // ===========================================================
   setFormFromState();
   resizeCanvas();
+  updatePgBadge({ok: {{ 'true' if postgres_enabled else 'false' }}});
   if (FRIGATE_OK) {
     loadSnapshot();
     startAuto();

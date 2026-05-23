@@ -2,7 +2,7 @@
 
 import threading
 
-from app import mqtt_listener
+from app import mqtt_listener, webhook
 from app.config import Config
 from app.settings import Settings
 from app.storage import Store
@@ -45,6 +45,8 @@ def main():
     tracker = Tracker()
 
     print(f"[init] counts iniziali: {store.snapshot()}", flush=True)
+
+    webhook.start()
 
     threading.Thread(
         target=mqtt_listener.run,

@@ -10,10 +10,11 @@ from datetime import date, datetime, timedelta
 from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, session, url_for)
 
+from app import webhook as webhook_mod
 from app.auth import credentials_match, login_required
 from app.config import Config
 from app.settings import EDITABLE, Settings
-from app.storage import summarize_hourly
+from app.storage import Store, summarize_hourly
 
 
 def _parse_day(day_str):
@@ -306,10 +307,10 @@ def create_app(store, tracker):
     @login_required
     def api_settings_get():
         return jsonify({
-            "current": Settings.current(),
-            "editable": {k: {"type": t, "min": lo, "max": hi}
-                         for k, (t, lo, hi) in EDITABLE.items()},
+            "current": Settings.current(),       # secrets mascherati
+            "schema": Settings.schema(),
             "frigate_url_set": bool(Config.FRIGATE_URL),
+            "postgres_connected": store.pg is not None,
         })
 
     @app.route("/api/settings", methods=["POST"])
@@ -320,15 +321,180 @@ def create_app(store, tracker):
         else:
             payload = request.form.to_dict()
         try:
-            changed = Settings.update(payload)
+            result = Settings.update(payload)
         except ValueError as e:
             return jsonify({"ok": False, "error": str(e)}), 400
-        print(f"[settings] aggiornati da UI: {changed}", flush=True)
+        print(f"[settings] aggiornati: {result['changed']}", flush=True)
+
+        # Se sono cambiate le DB_*, riconnetti il Postgres in caldo
+        pg_changed = any(k.startswith("DB_") for k in result["changed"])
+        pg_result = None
+        if pg_changed:
+            ok, msg = store.reconnect_postgres()
+            pg_result = {"ok": ok, "message": msg}
+
         return jsonify({
             "ok": True,
-            "changed": changed,
+            "changed": result["changed"],
+            "restart_needed": result["restart_needed"],
+            "postgres_reconnect": pg_result,
             "current": Settings.current(),
         })
+
+    # -------- DATABASE --------
+
+    @app.route("/api/db/test", methods=["POST"])
+    @login_required
+    def api_db_test():
+        """Testa connessione PG SENZA salvare nulla.
+
+        Accetta i parametri DB_* nel body; se vuoti/'***' usa quelli correnti.
+        """
+        payload = request.get_json(silent=True) or {}
+
+        def pick(key, default):
+            v = payload.get(key)
+            if v is None or v == "" or v == "***":
+                return default
+            return v
+
+        host = pick("DB_HOST", Config.DB_HOST)
+        port = int(pick("DB_PORT", Config.DB_PORT))
+        name = pick("DB_NAME", Config.DB_NAME)
+        user = pick("DB_USER", Config.DB_USER)
+        # password: stringa vuota o '***' = usa quella attuale
+        pwd = payload.get("DB_PASS")
+        if pwd in (None, "", "***"):
+            pwd = Config.DB_PASS
+        schema = pick("DB_SCHEMA", Config.DB_SCHEMA)
+        table = pick("DB_TABLE", Config.DB_TABLE)
+        sslmode = pick("DB_SSLMODE", Config.DB_SSLMODE)
+
+        if not (host and name and user):
+            return jsonify({"ok": False,
+                            "error": "DB_HOST, DB_NAME, DB_USER obbligatori"}), 400
+
+        result = Store.test_postgres_connection(
+            host, port, name, user, pwd, schema, table, sslmode,
+        )
+        return jsonify(result)
+
+    @app.route("/api/db/sql")
+    @login_required
+    def api_db_sql():
+        """Restituisce il comando SQL CREATE TABLE con i nomi correnti."""
+        schema = Config.DB_SCHEMA or "public"
+        table = Config.DB_TABLE or "counter_events"
+        full = f'"{schema}"."{table}"'
+        sql = f"""-- Schema PostgreSQL per Frigate Person Counter
+-- Genera ed esegue automaticamente dall'app al primo avvio se l'utente DB
+-- ha permessi di CREATE. Eseguilo manualmente solo se serve un setup esplicito.
+
+CREATE TABLE IF NOT EXISTS {full} (
+    id              BIGSERIAL    PRIMARY KEY,
+    event_id        TEXT         NOT NULL,             -- id Frigate
+    camera          TEXT         NOT NULL,
+    ts              TIMESTAMPTZ  NOT NULL,             -- istante conteggio
+    event_type      TEXT         NOT NULL CHECK (event_type IN ('enter','exit')),
+    method          TEXT,                              -- es. 'line_cross'
+    start_x         REAL,
+    start_y         REAL,
+    end_x           REAL,
+    end_y           REAL,
+    reason          TEXT,
+    enter_total     INTEGER      NOT NULL DEFAULT 0,
+    exit_total      INTEGER      NOT NULL DEFAULT 0,
+    occupancy       INTEGER      NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UNIQUE (event_id, event_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_{table}_camera_ts ON {full} (camera, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_{table}_ts        ON {full} (ts DESC);
+CREATE INDEX IF NOT EXISTS idx_{table}_type      ON {full} (event_type);
+
+-- View opzionali (riepilogo giornaliero / orario)
+CREATE OR REPLACE VIEW {schema}.counter_daily_summary AS
+SELECT
+    camera,
+    (ts AT TIME ZONE 'UTC')::date                       AS day,
+    COUNT(*) FILTER (WHERE event_type = 'enter')        AS enter_count,
+    COUNT(*) FILTER (WHERE event_type = 'exit')         AS exit_count,
+    MAX(occupancy)                                      AS peak_occupancy
+FROM {full}
+GROUP BY camera, (ts AT TIME ZONE 'UTC')::date;
+
+CREATE OR REPLACE VIEW {schema}.counter_hourly_summary AS
+SELECT
+    camera,
+    date_trunc('hour', ts)                              AS hour,
+    COUNT(*) FILTER (WHERE event_type = 'enter')        AS enter_count,
+    COUNT(*) FILTER (WHERE event_type = 'exit')         AS exit_count
+FROM {full}
+GROUP BY camera, date_trunc('hour', ts);
+"""
+        return jsonify({"sql": sql, "table": full})
+
+    # -------- WEBHOOK --------
+
+    @app.route("/api/webhook/test", methods=["POST"])
+    @login_required
+    def api_webhook_test():
+        """Invia un evento finto al webhook configurato e ritorna l'esito."""
+        if not Config.WEBHOOK_URL:
+            return jsonify({"ok": False,
+                            "error": "WEBHOOK_URL non configurata"}), 400
+        payload = {
+            "event":       "enter",
+            "camera":      Config.CAMERA,
+            "ts":          time.time(),
+            "datetime":    time.strftime("%Y-%m-%d %H:%M:%S"),
+            "occupancy":   0,
+            "enter_total": 0,
+            "exit_total":  0,
+            "method":      "test",
+            "event_id":    "test-event",
+            "start":       {"x": 0.50, "y": 0.10},
+            "end":         {"x": 0.50, "y": 0.90},
+            "reason":      "manual test from /settings",
+            "_test":       True,
+        }
+        try:
+            status, body = webhook_mod._post_once(
+                Config.WEBHOOK_URL, payload, Config.WEBHOOK_TIMEOUT)
+            return jsonify({
+                "ok": 200 <= status < 300,
+                "status": status,
+                "body_preview": body.decode("utf-8", errors="replace")[:300],
+                "url": Config.WEBHOOK_URL,
+            })
+        except Exception as e:
+            return jsonify({
+                "ok": False,
+                "error": f"{type(e).__name__}: {e}",
+                "url": Config.WEBHOOK_URL,
+            }), 502
+
+    # -------- CAMERE FRIGATE (per il dropdown della UI) --------
+
+    @app.route("/api/frigate/cameras")
+    @login_required
+    def api_frigate_cameras():
+        if not Config.FRIGATE_URL:
+            return jsonify({"ok": False, "error": "FRIGATE_URL non configurata",
+                            "cameras": []}), 503
+        status, ctype, data, err, url = _fetch_frigate("/api/config")
+        if err or status != 200 or not data:
+            return jsonify({"ok": False, "error": err or f"HTTP {status}",
+                            "cameras": []}), 502
+        try:
+            cfg = __import__("json").loads(data.decode("utf-8"))
+            cams = sorted((cfg.get("cameras") or {}).keys())
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e),
+                            "cameras": []}), 500
+        return jsonify({"ok": True, "cameras": cams,
+                        "current": Config.CAMERA})
 
     def _fetch_frigate(path):
         """Tenta una GET verso Frigate e ritorna (status, content_type, data, error)."""
