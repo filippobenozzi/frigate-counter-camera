@@ -171,23 +171,12 @@ def create_app(store, tracker):
             }
         return jsonify(data)
 
-    # -------- ADMIN --------
+    # -------- ADMIN (vecchia pagina → ora unificata in /settings) --------
 
     @app.route("/admin")
     @login_required
     def admin():
-        with store.lock:
-            snapshot = store.snapshot()
-        stats = store.get_stats()
-        return render_template(
-            "admin.html",
-            camera=Config.CAMERA,
-            snapshot=snapshot,
-            stats=stats,
-            today_iso=date.today().isoformat(),
-            postgres_enabled=Config.postgres_enabled(),
-            auth_enabled=Config.auth_enabled(),
-        )
+        return redirect(url_for("settings_page"))
 
     @app.route("/api/admin/reset-counters", methods=["POST"])
     @login_required
@@ -297,10 +286,17 @@ def create_app(store, tracker):
     @app.route("/settings")
     @login_required
     def settings_page():
+        with store.lock:
+            snap = store.snapshot()
+        stats = store.get_stats()
         return render_template(
             "settings.html",
             camera=Config.CAMERA,
             current=Settings.current(),
+            snapshot=snap,
+            stats=stats,
+            today_iso=date.today().isoformat(),
+            postgres_enabled=Config.postgres_enabled(),
             frigate_url_set=bool(Config.FRIGATE_URL),
             snapshot_refresh=Config.SNAPSHOT_REFRESH_SEC,
             auth_enabled=Config.auth_enabled(),

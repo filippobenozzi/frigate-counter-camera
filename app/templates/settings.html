@@ -166,6 +166,93 @@
     }
     .actions-bar .feedback.ok{color:var(--text)}
     .actions-bar .feedback.err{color:#ffaaaa}
+    /* ===== STATUS GRID (sistema) ===== */
+    .system-block{ margin-top:2rem; }
+    .status-grid{
+      display:grid; gap:1px;
+      grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+      background:var(--border); border:1px solid var(--border);
+      border-radius:4px; overflow:hidden;
+    }
+    .stat{ background:var(--panel); padding:1rem 1.25rem; }
+    .stat .lbl{
+      color:var(--muted); font-size:.6rem;
+      text-transform:uppercase; letter-spacing:.15em;
+      font-weight:500; margin-bottom:.4rem;
+    }
+    .stat .val{
+      font-size:1.4rem; font-weight:500; line-height:1.1;
+      letter-spacing:-.02em; word-break:break-all;
+    }
+    .stat .val.dim{ color:var(--dim); font-size:.9rem; font-weight:300; }
+    .stat .sub{
+      color:var(--dim); font-size:.65rem;
+      margin-top:.35rem; letter-spacing:.05em;
+    }
+
+    /* ===== RESET ACTIONS ===== */
+    .reset-block{ margin-top:2rem; }
+    .action{
+      background:var(--panel); border:1px solid var(--border);
+      border-left:3px solid var(--dimmer); border-radius:4px;
+      padding:1.5rem; margin-bottom:1rem;
+      display:grid; grid-template-columns:1fr auto;
+      gap:1.5rem; align-items:start;
+    }
+    .action.danger{ border-left-color:#aa3030; }
+    .action.warn{   border-left-color:#aa7720; }
+    .action.safe{   border-left-color:#4a4a4a; }
+    .action .desc h3{
+      margin:0 0 .35rem; font-size:.8rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.1em;
+    }
+    .action .desc p{
+      margin:0; color:var(--muted); font-size:.8rem; line-height:1.6;
+    }
+    .action .desc small{
+      display:block; color:var(--dim); font-size:.7rem;
+      margin-top:.5rem; letter-spacing:.03em;
+    }
+    .action .desc code{
+      background:var(--panel2); color:var(--text2);
+      padding:.1rem .4rem; border-radius:2px;
+      border:1px solid var(--border); font-size:.72rem;
+    }
+    .action .ctrl{
+      display:flex; flex-direction:column;
+      gap:.5rem; min-width:230px;
+    }
+    .action .ctrl input[type=date]{
+      background:var(--panel2); color:var(--text);
+      border:1px solid var(--border); border-radius:3px;
+      padding:.5rem .7rem; font-size:.8rem;
+      font-family:inherit; color-scheme:dark; width:100%;
+    }
+    .action .ctrl input[type=date]:focus{
+      outline:none; border-color:var(--accent);
+    }
+    .action .ctrl .btn{ justify-content:center; }
+    .btn.danger{ color:var(--text); border-color:var(--border-st); }
+    .btn.danger:hover{
+      background:#2a1414; border-color:#5a3030; color:#ffaaaa;
+    }
+    .btn.warn:hover{
+      background:#1f1a10; border-color:#5a4a20; color:#ffd58a;
+    }
+    .reset-feedback{
+      margin-top:1.5rem; padding:1rem 1.25rem;
+      background:var(--panel2); border:1px solid var(--border-st);
+      border-left:3px solid var(--accent); border-radius:3px;
+      font-size:.8rem; color:var(--text2); min-height:1rem;
+    }
+    .reset-feedback:empty{ display:none; }
+    .reset-feedback .ok{ color:var(--text); font-weight:500; }
+    .reset-feedback .err{ color:#ffaaaa; font-weight:500; }
+
+    @media (max-width:720px){
+      .action{ grid-template-columns:1fr; }
+      .action .ctrl{ min-width:0; }
+    }
   </style>
 </head>
 <body>
@@ -301,7 +388,31 @@
       </div>
 
       <div class="group">
-        <h3>ROI (zona utile della porta)</h3>
+        <h3>ROI — Region Of Interest</h3>
+        <details style="background:var(--panel2); border:1px solid var(--border);
+                        border-left:3px solid var(--roi); border-radius:3px;
+                        padding:.6rem .8rem; font-size:.72rem; line-height:1.55;
+                        color:var(--text2)">
+          <summary style="cursor:pointer; user-select:none; color:var(--text);
+                          font-weight:500; letter-spacing:.03em">
+            Cos'è la ROI?
+          </summary>
+          <p style="margin:.6rem 0 0; color:var(--muted)">
+            È il <strong>rettangolo azzurro</strong> sull'immagine. Solo i movimenti
+            che avvengono <strong>dentro</strong> il rettangolo vengono considerati
+            per il conteggio: tutto quello che è fuori viene ignorato.
+          </p>
+          <p style="margin:.5rem 0 0; color:var(--muted)">
+            Esempio: se la camera inquadra la porta ma vede anche un corridoio
+            sullo sfondo, restringi la ROI alla sola zona della porta. Le persone
+            che passano in fondo al corridoio non verranno contate, perché i loro
+            punti finiscono fuori dal rettangolo.
+          </p>
+          <p style="margin:.5rem 0 0; color:var(--dim); font-size:.68rem">
+            Tutti i valori sono normalizzati 0..1 (0 = bordo sinistro/alto,
+            1 = bordo destro/basso dell'immagine).
+          </p>
+        </details>
         <div class="field-range">
           <input type="range" name="MOTION_X1" min="0" max="1" step="0.01">
           <input type="number" name="MOTION_X1_num" min="0" max="1" step="0.01">
@@ -368,6 +479,111 @@
     </form>
 
   </div>
+
+  <!-- ============ SISTEMA ============ -->
+  <div class="system-block">
+    <div class="section-title">
+      <h2>Sistema</h2>
+    </div>
+    <div class="status-grid">
+      <div class="stat">
+        <div class="lbl">Entrate cumulative</div>
+        <div class="val">{{ snapshot.enter }}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Uscite cumulative</div>
+        <div class="val">{{ snapshot.exit }}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Presenti ora</div>
+        <div class="val">{{ snapshot.occupancy }}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Eventi storici</div>
+        <div class="val">{{ stats.events_count or 0 }}</div>
+        <div class="sub">in {{ stats.days_count or 0 }} giorni distinti</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Storage</div>
+        <div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
+        {% if stats.jsonl_size %}
+          <div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size / 1024) }} KB</div>
+        {% endif %}
+      </div>
+      <div class="stat">
+        <div class="lbl">Ultimo evento</div>
+        <div class="val dim">
+          {% if stats.last_event %}
+            {{ stats.last_event[:19].replace('T', ' ') }}
+          {% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESET ============ -->
+  <div class="reset-block">
+    <div class="section-title">
+      <h2>Reset</h2>
+    </div>
+
+    <div class="action safe">
+      <div class="desc">
+        <h3>Reset cumulativi</h3>
+        <p>
+          Azzera <code>entrate</code>, <code>uscite</code> e <code>presenti</code>.
+          <strong>Lo storico degli eventi resta intatto</strong> — utile se hai
+          appena montato la camera e vuoi ripartire da zero senza perdere i log.
+        </p>
+        <small>Operazione reversibile? No, i contatori tornano a 0.</small>
+      </div>
+      <div class="ctrl">
+        <button class="btn" type="button" id="btn-reset-counters">
+          Azzera contatori
+        </button>
+      </div>
+    </div>
+
+    <div class="action warn">
+      <div class="desc">
+        <h3>Reset statistiche di un giorno</h3>
+        <p>
+          Cancella <strong>tutti gli eventi di un singolo giorno</strong> dallo
+          storico (sia da Postgres sia dal file <code>events.jsonl</code>).
+          I contatori cumulativi vengono corretti sottraendo gli enter/exit
+          del giorno cancellato.
+        </p>
+        <small>Usa quando vuoi rimuovere falsi positivi accumulati in una giornata.</small>
+      </div>
+      <div class="ctrl">
+        <input type="date" id="reset-day-input"
+               value="{{ today_iso }}" max="{{ today_iso }}">
+        <button class="btn warn" type="button" id="btn-reset-day">
+          Cancella giorno
+        </button>
+      </div>
+    </div>
+
+    <div class="action danger">
+      <div class="desc">
+        <h3>Reset totale (wipe)</h3>
+        <p>
+          <strong>Cancella TUTTO lo storico</strong> + azzera i contatori.
+          Eventi rimossi sia dal file JSON sia dalla tabella Postgres.
+          Operazione <strong>irreversibile</strong>.
+        </p>
+        <small>Da usare solo se hai esportato i dati o stai cambiando configurazione completamente.</small>
+      </div>
+      <div class="ctrl">
+        <button class="btn danger" type="button" id="btn-reset-all">
+          Wipe totale
+        </button>
+      </div>
+    </div>
+
+    <div id="reset-feedback" class="reset-feedback"></div>
+  </div>
+
 </main>
 
 <script>
@@ -689,6 +905,61 @@
       fb.textContent = '✗ ' + e.message;
       fb.className = 'feedback err';
     }
+  });
+
+  // ===========================================================
+  //  RESET ACTIONS (sezione Sistema/Reset)
+  // ===========================================================
+  const rfb = document.getElementById('reset-feedback');
+
+  async function doReset(url, body, confirmMsg, label) {
+    if (confirmMsg && !confirm(confirmMsg)) return;
+    rfb.innerHTML = '<span>esecuzione…</span>';
+    try {
+      const opts = { method: 'POST' };
+      if (body) {
+        opts.headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+        opts.body = body;
+      }
+      const r = await fetch(url, opts);
+      const d = await r.json();
+      if (!r.ok || !d.ok) {
+        rfb.innerHTML = `<span class="err">✗ ${d.error || ('HTTP ' + r.status)}</span>`;
+        return;
+      }
+      let msg = `✓ ${label}`;
+      if (d.action === 'reset-day') {
+        msg += ` (${d.day}: -${d.deleted_enter} enter, -${d.deleted_exit} exit)`;
+      } else if (d.action === 'reset-all') {
+        msg += ` (${d.deleted_pg_rows} righe DB rimosse)`;
+      }
+      msg += ` · cumulativi ora: enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
+      rfb.innerHTML = `<span class="ok">${msg}</span>`;
+      // ricarica per aggiornare il pannello "Sistema"
+      setTimeout(() => location.reload(), 1500);
+    } catch (e) {
+      rfb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
+    }
+  }
+
+  document.getElementById('btn-reset-counters').addEventListener('click', () => {
+    doReset('/api/admin/reset-counters', null,
+            'Azzerare i contatori cumulativi? (lo storico resta)',
+            'contatori azzerati');
+  });
+
+  document.getElementById('btn-reset-day').addEventListener('click', () => {
+    const day = document.getElementById('reset-day-input').value;
+    if (!day) { alert('Seleziona un giorno'); return; }
+    doReset('/api/admin/reset-day', 'day=' + encodeURIComponent(day),
+            `Cancellare TUTTI gli eventi del ${day}? Operazione irreversibile.`,
+            'giorno cancellato');
+  });
+
+  document.getElementById('btn-reset-all').addEventListener('click', () => {
+    if (!confirm('⚠ ATTENZIONE: questo cancella TUTTO lo storico e azzera i contatori.')) return;
+    if (!confirm('Sei davvero sicuro? Operazione IRREVERSIBILE.')) return;
+    doReset('/api/admin/reset-all', null, null, 'wipe completato');
   });
 
   // ===========================================================
