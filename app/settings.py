@@ -26,10 +26,29 @@ from app.config import Config
 # - restart_needed: True se cambiarlo richiede restart del container
 # - secret: True se va mascherato in GET (password etc.)
 EDITABLE = {
-    # ===== Modalità di conteggio =====
-    "COUNT_MODE":           {"type": "str",   "group": "detection"},
-    "ENTER_DIRECTION":      {"type": "str",   "group": "detection"},
-    "POINT_MODE":           {"type": "str",   "group": "detection"},
+    # ===== Sorgente RTSP =====
+    "RTSP_URL":             {"type": "rtsp",  "group": "source", "restart_needed": True},
+    "RTSP_TRANSPORT":       {"type": "str",   "group": "source", "restart_needed": True},
+    "CAPTURE_RECONNECT_SEC":{"type": "float", "min": 1, "max": 60, "group": "source", "restart_needed": True},
+    "CAPTURE_TIMEOUT_SEC":  {"type": "float", "min": 1, "max": 30, "group": "source", "restart_needed": True},
+
+    # ===== Detection (YOLOv8n ONNX) =====
+    "MODEL_PATH":           {"type": "str",   "group": "detection", "restart_needed": True},
+    "DETECT_FPS":           {"type": "float", "min": 1, "max": 30, "group": "detection"},
+    "DETECT_INPUT_SIZE":    {"type": "int",   "min": 160, "max": 1280, "group": "detection", "restart_needed": True},
+    "DETECT_CONF":          {"type": "float", "min": 0.05, "max": 0.95, "group": "detection"},
+    "DETECT_IOU_NMS":       {"type": "float", "min": 0.1, "max": 0.9, "group": "detection"},
+    "MAX_DETECTIONS":       {"type": "int",   "min": 1, "max": 200, "group": "detection"},
+    "ORT_THREADS":          {"type": "int",   "min": 0, "max": 32, "group": "detection", "restart_needed": True},
+
+    # ===== Tracking (SORT) =====
+    "TRACK_MAX_AGE":        {"type": "int",   "min": 1, "max": 120, "group": "tracking", "restart_needed": True},
+    "TRACK_MIN_HITS":       {"type": "int",   "min": 1, "max": 20, "group": "tracking", "restart_needed": True},
+    "TRACK_IOU":            {"type": "float", "min": 0.05, "max": 0.9, "group": "tracking", "restart_needed": True},
+
+    # ===== Conteggio =====
+    "ENTER_DIRECTION":      {"type": "str",   "group": "counting"},
+    "POINT_MODE":           {"type": "str",   "group": "counting"},
 
     # ===== Linea =====
     "LINE_Y":               {"type": "float", "min": 0.0, "max": 1.0,  "group": "line"},
@@ -41,33 +60,19 @@ EDITABLE = {
     "MOTION_Y1":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
     "MOTION_Y2":            {"type": "float", "min": 0.0, "max": 1.0, "group": "roi"},
 
-    # ===== Soglie full_motion =====
-    "MOTION_MIN_POINTS":    {"type": "int",   "min": 2,   "max": 50,   "group": "thresholds"},
-    "MOTION_MIN_DELTA_Y":   {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
-    "MOTION_MIN_SPAN_Y":    {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
-    "MOTION_MIN_NET_RATIO": {"type": "float", "min": 0.0, "max": 1.0, "group": "thresholds"},
-
-    # ===== Tracking =====
-    "JITTER_DISTANCE":      {"type": "float", "min": 0.0, "max": 0.2,   "group": "tracking"},
-    "TRACK_TTL":            {"type": "float", "min": 1.0, "max": 300.0, "group": "tracking"},
-    "TRACK_POINTS_MAX":     {"type": "int",   "min": 10,  "max": 2000,  "group": "tracking"},
-
-    # ===== Camera =====
+    # ===== Camera / overlay =====
     "CAMERA":               {"type": "str",   "group": "camera"},
-    "FRAME_W":              {"type": "int",   "min": 320,  "max": 7680, "group": "camera"},
-    "FRAME_H":              {"type": "int",   "min": 240,  "max": 4320, "group": "camera"},
-    "REQUIRED_ZONE":        {"type": "str",   "group": "camera"},
+    "DRAW_OVERLAY":         {"type": "bool",  "group": "overlay"},
+    "JPEG_QUALITY":         {"type": "int",   "min": 30, "max": 95, "group": "overlay"},
+    "SNAPSHOT_REFRESH_SEC": {"type": "float", "min": 0.5, "max": 60, "group": "overlay"},
 
-    # ===== MQTT (restart) =====
+    # ===== MQTT output (opzionale) =====
+    "MQTT_ENABLED":         {"type": "bool",   "group": "mqtt", "restart_needed": True},
     "MQTT_HOST":            {"type": "str",    "group": "mqtt", "restart_needed": True},
-    "MQTT_PORT":            {"type": "int",    "min": 1, "max": 65535,
-                             "group": "mqtt", "restart_needed": True},
+    "MQTT_PORT":            {"type": "int",    "min": 1, "max": 65535, "group": "mqtt", "restart_needed": True},
     "MQTT_USER":            {"type": "str",    "group": "mqtt", "restart_needed": True},
     "MQTT_PASS":            {"type": "secret", "group": "mqtt", "restart_needed": True},
-
-    # ===== Frigate (snapshot) =====
-    "FRIGATE_URL":          {"type": "url",   "group": "frigate"},
-    "SNAPSHOT_REFRESH_SEC": {"type": "float", "min": 0.5, "max": 60, "group": "frigate"},
+    "MQTT_BASE_TOPIC":      {"type": "str",    "group": "mqtt", "restart_needed": True},
 
     # ===== PostgreSQL =====
     "DB_HOST":              {"type": "str",    "group": "postgres"},
@@ -87,9 +92,9 @@ EDITABLE = {
     "WEBHOOK_RETRY":        {"type": "int",    "min": 0,   "max": 5,  "group": "webhook"},
 }
 
-_VALID_COUNT_MODES = {"full_motion", "line_cross"}
 _VALID_DIRECTIONS  = {"up", "down"}
 _VALID_POINT_MODES = {"bottom", "center"}
+_VALID_TRANSPORT   = {"tcp", "udp"}
 _VALID_SSLMODE     = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
 
 SECRET_MASK = "***"
@@ -98,13 +103,9 @@ SECRET_MASK = "***"
 def _coerce(key, raw):
     meta = EDITABLE[key]
     typ = meta["type"]
-    if typ in ("str", "url", "secret"):
+    if typ in ("str", "url", "secret", "rtsp"):
         v = str(raw).strip() if raw is not None else ""
-        if key == "COUNT_MODE":
-            v = v.lower()
-            if v and v not in _VALID_COUNT_MODES:
-                raise ValueError(f"deve essere uno tra {sorted(_VALID_COUNT_MODES)}")
-        elif key == "ENTER_DIRECTION":
+        if key == "ENTER_DIRECTION":
             v = v.lower()
             if v and v not in _VALID_DIRECTIONS:
                 raise ValueError(f"deve essere uno tra {sorted(_VALID_DIRECTIONS)}")
@@ -112,14 +113,21 @@ def _coerce(key, raw):
             v = v.lower()
             if v and v not in _VALID_POINT_MODES:
                 raise ValueError(f"deve essere uno tra {sorted(_VALID_POINT_MODES)}")
+        elif key == "RTSP_TRANSPORT":
+            v = v.lower()
+            if v and v not in _VALID_TRANSPORT:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_TRANSPORT)}")
         elif key == "DB_SSLMODE":
             v = v.lower()
             if v and v not in _VALID_SSLMODE:
                 raise ValueError(f"deve essere uno tra {sorted(_VALID_SSLMODE)}")
-        elif typ == "url" and v:
+        if typ == "url" and v:
             if not (v.startswith("http://") or v.startswith("https://")):
                 raise ValueError("deve iniziare con http:// o https://")
             v = v.rstrip("/")
+        if typ == "rtsp" and v:
+            if not (v.startswith("rtsp://") or v.startswith("rtsps://")):
+                raise ValueError("deve iniziare con rtsp:// o rtsps://")
         return v
     if typ == "bool":
         if isinstance(raw, bool):

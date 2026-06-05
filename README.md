@@ -1,126 +1,141 @@
-# Frigate Person Counter
+# Person Counter — RTSP + YOLOv8 (CPU)
 
-Conteggio direzionale di persone per [Frigate NVR](https://frigate.video/).
-Consuma gli eventi MQTT `frigate/events`, analizza la traiettoria di ogni
-persona rilevata e classifica l'attraversamento come **ingresso** o **uscita**.
+Conteggio direzionale di persone **autonomo**: apre direttamente lo stream
+**RTSP/RTSPS** della telecamera, rileva le persone con **YOLOv8n** (ONNX
+Runtime, solo CPU), le traccia con **SORT** e conta gli attraversamenti di una
+linea configurabile. Non richiede Frigate né altri NVR.
 
-- Dashboard web con totali in tempo reale, grafico orario e navigazione tra
-  giorni passati
-- Pagina di **Impostazioni** unificata con snapshot live della camera per
-  disegnare graficamente la linea di attraversamento e la ROI
-- Storage su **JSON locale** + **PostgreSQL** opzionale come integrazione esterna
-- **Webhook** configurabile, invia un POST JSON ad ogni enter/exit
-- Autenticazione opzionale (login form + HTTP Basic per le API)
+- Funziona su **CPU** (mini-PC / NUC x86): detection a FPS ridotto + tracking
+- Dashboard web: totali live, grafico orario, navigazione tra i giorni
+- Pagina **Impostazioni** con **snapshot live** della camera (box disegnati) per
+  tarare graficamente linea e ROI trascinandole
+- Storage **JSON locale** + **PostgreSQL** opzionale
+- **Webhook** (POST ad ogni enter/exit) e **MQTT output** opzionali
+- Auth opzionale (login form + HTTP Basic per le API)
+
+---
+
+## Come funziona
+
+```
+ RTSP/RTSPS ──► cattura ──► YOLOv8n (ONNX, CPU) ──► SORT (Kalman+IoU)
+   stream      (thread)        detection persona      tracking identità
+                                                            │
+                                                            ▼
+                                              attraversamento linea + ROI
+                                                            │
+                              ┌─────────────┬───────────────┼───────────────┐
+                              ▼             ▼               ▼               ▼
+                         counts.json   events.jsonl     Postgres        webhook
+                                                                        + MQTT
+```
+
+1. Un thread legge lo stream e tiene solo l'ultimo frame (no latenza accumulata)
+2. A `DETECT_FPS` fotogrammi/sec il detector trova le persone (box + confidenza)
+3. SORT mantiene l'identità di ogni persona tra un frame e l'altro
+4. Per ogni persona si segue da che lato della **linea** sta: quando attraversa
+   da una zona all'altra (superando il **margine**) dentro la **ROI**, conta
+   `enter` o `exit` secondo `ENTER_DIRECTION`
+5. L'evento viene salvato (JSON + Postgres), pubblicato su MQTT e inviato al webhook
+
+La macchina a stati per-persona conta **solo gli attraversamenti completi**: chi
+staziona davanti alla porta o va avanti/indietro nella zona morta non viene contato.
 
 ---
 
 ## Quick start (Docker Compose)
 
 ```bash
-git clone <questo-repo>
-cd frigate-counter-camera
 cp docker-compose.example.yml docker-compose.yml
-# modifica i valori in docker-compose.yml (MQTT_HOST, FRIGATE_URL, CAMERA_NAME, AUTH_*)
+# modifica RTSP_URL (substream consigliato), AUTH_*, e gli altri parametri
+docker compose up -d --build       # il build esporta yolov8n.onnx (richiede ~qualche minuto)
+```
+
+Apri **http://localhost:8080**, fai login, vai in **Impostazioni → Camera**:
+
+1. Vedi lo snapshot live con i box delle persone rilevate
+2. Trascina la **linea gialla** sulla soglia fisica della porta
+3. Restringi il **rettangolo azzurro (ROI)** alla zona utile
+4. **Salva** — il conteggio parte subito
+
+> Il modello `yolov8n.onnx` viene esportato automaticamente durante il build
+> Docker (stage `model-builder`, usa ultralytics+torch SOLO in build). L'immagine
+> runtime resta leggera (~400 MB, niente PyTorch). Puoi anche montare un tuo
+> `.onnx` in `/models` e puntarlo con `MODEL_PATH`.
+
+---
+
+## Requisiti hardware
+
+Pensato per **CPU x86** (mini-PC / NUC). Indicazioni:
+
+| Hardware | DETECT_FPS consigliato | Note |
+|---|---|---|
+| NUC / mini-PC i3-i5 | 8–12 | ottimo, 1-2 core per l'inferenza |
+| Server multi-core | 10–15 | si può alzare input size |
+| Raspberry Pi 4/5 | 3–6 | possibile ma al limite; usa substream piccolo |
+
+Usa **`ORT_THREADS`** per limitare i core dedicati all'inferenza, e
+**`DETECT_FPS`** per bilanciare reattività e carico. Conviene puntare il
+container a un **substream a bassa risoluzione** (~640px) della telecamera.
+
+---
+
+## Vista dall'alto / fisheye (camere a soffitto)
+
+YOLOv8n-COCO rileva male le persone **viste dall'alto** (testa+spalle scorciate),
+specie di notte in IR. Per questi setup usa un **head-detector** (rileva le teste,
+ben visibili dall'alto) passandolo come build-arg:
+
+```bash
+docker compose build --build-arg \
+  MODEL_URL=https://raw.githubusercontent.com/Abcfsa/YOLOv8_head_detector/main/nano.pt
 docker compose up -d
 ```
 
-Poi apri **http://localhost:8080** e fai login con le credenziali messe in
-`AUTH_USER` / `AUTH_PASS`.
+- `nano.pt` (6 MB, veloce) o `medium.pt` (52 MB, più accurato) — 1 classe "head"
+- Imposta `POINT_MODE=center` (si traccia il centro della testa)
+- Il modello a 1 classe è gestito automaticamente (`PERSON_CLASS_ID=0`)
 
-Il primo passo dopo l'avvio è andare in **Impostazioni** e:
-
-1. Cliccare *↻ Carica camere da Frigate* per popolare il dropdown delle camere
-2. Trascinare la **linea gialla** sullo snapshot dove c'è la soglia fisica della porta
-3. Restringere il **rettangolo azzurro (ROI)** all'area della porta
-4. Cliccare **Salva**
-
-I conteggi iniziano immediatamente, senza restart.
-
----
-
-## Cosa fa esattamente
-
-1. Si connette al broker MQTT del Frigate
-2. Si sottoscrive a `frigate/events` e filtra solo gli eventi `label=person`
-   della camera scelta
-3. Per ogni evento tiene un *track*: lista di punti normalizzati (0..1) che
-   rappresentano la posizione della persona nel tempo
-4. Quando l'evento Frigate termina (`type=end`), classifica il movimento:
-   - **`line_cross`** (default): la traiettoria deve attraversare una linea
-     orizzontale, partendo da sopra (con margine) e arrivando sotto (con
-     margine), o viceversa. Robusto contro chi staziona davanti alla porta.
-   - **`full_motion`**: analisi del movimento totale (`delta_y`, `span_y`,
-     `net_ratio`). Più sensibile, può contare falsi positivi.
-5. Se è enter o exit: incrementa i contatori, salva l'evento, pubblica i nuovi
-   totali su MQTT (`counter/<camera>/enter|exit|occupancy`), opzionalmente
-   chiama il webhook.
-
----
+> Modello di [Abcfsa/YOLOv8_head_detector](https://github.com/Abcfsa/YOLOv8_head_detector)
+> (addestrato su SCUT-HEAD). Verifica la licenza per l'uso che ne fai.
 
 ## Struttura del progetto
 
 ```
-frigate-counter-camera/
-├── Dockerfile
+.
+├── Dockerfile                    # multi-stage: esporta onnx + runtime leggero
 ├── docker-compose.example.yml
-├── requirements.txt
+├── requirements.txt              # opencv-headless, onnxruntime, numpy, flask, psycopg2, paho
 ├── main.py                       # entrypoint
-├── sql/
-│   └── schema.sql                # schema Postgres pre-pronto (vedi POSTGRES.md)
+├── sql/schema.sql                # schema Postgres (vedi POSTGRES.md)
 ├── app/
 │   ├── config.py                 # default da env
-│   ├── settings.py               # runtime override (settings.json)
-│   ├── motion.py                 # classificatore line_cross + full_motion
-│   ├── tracker.py                # stato in-memory dei track attivi
-│   ├── mqtt_listener.py          # consumo eventi Frigate
-│   ├── storage.py                # JSON + Postgres (orchestrato)
+│   ├── settings.py               # override runtime (settings.json) + UI
+│   ├── capture.py                # cattura RTSP con riconnessione
+│   ├── detector.py               # YOLOv8n ONNX (CPU)
+│   ├── sort.py                   # tracker SORT (Kalman + IoU)
+│   ├── counting.py               # macchina a stati attraversamento linea
+│   ├── pipeline.py               # orchestratore cattura→detect→track→conteggio
+│   ├── storage.py                # JSON + Postgres
 │   ├── webhook.py                # POST async ad ogni enter/exit
+│   ├── mqtt_out.py               # pubblicazione MQTT opzionale
 │   ├── auth.py                   # login form + HTTP Basic
-│   ├── web.py                    # Flask app + routes
-│   └── templates/
-│       ├── login.html
-│       ├── dashboard.html        # totali, grafico, tabella, nav giorni
-│       └── settings.html         # canvas interattivo + form + reset
-├── README.md
-├── CONFIG.md                     # tutti i parametri configurabili
-└── POSTGRES.md                   # schema, setup, troubleshooting
+│   ├── web.py                    # Flask app + API
+│   └── templates/                # login, dashboard, settings
+├── README.md  ·  CONFIG.md  ·  POSTGRES.md
 ```
 
----
+## File a runtime in `/data`
 
-## File generati a runtime in `/data`
-
-- `counts.json` — contatori cumulativi (enter, exit, occupancy)
-- `events.jsonl` — log di tutti gli eventi (un evento per riga JSON)
-- `settings.json` — override runtime delle env. **Editato dalla UI in Impostazioni.**
-
-Tutti questi file vivono nel volume montato in `/data`. Per migrare l'app su
-un altro host basta copiare la cartella.
-
----
-
-## URL della web app
-
-| Route | Descrizione |
-|---|---|
-| `/` | dashboard con totali, grafico, tabella eventi, navigazione giorni |
-| `/settings` | impostazioni complete (camera, MQTT, Frigate, Postgres, webhook, reset) |
-| `/login` · `/logout` | auth |
-
-Tutti gli endpoint `/api/*` accettano sia cookie di sessione che HTTP Basic Auth.
-Vedi [CONFIG.md](CONFIG.md) per la lista completa.
+- `counts.json` — contatori cumulativi
+- `events.jsonl` — log eventi (1 per riga)
+- `settings.json` — **tutta** la configurazione modificata da UI (per migrare:
+  copia la cartella `/data`)
 
 ---
 
 ## Documentazione
 
-- **[CONFIG.md](CONFIG.md)** — tutti i parametri configurabili (env e da UI),
-  webhook payload, API reference
-- **[POSTGRES.md](POSTGRES.md)** — schema della tabella, setup del database,
-  view di riepilogo, troubleshooting
-
----
-
-## Licenza / contributi
-
-Progetto personale. PR benvenute.
+- **[CONFIG.md](CONFIG.md)** — tutti i parametri (env + UI), payload webhook, API
+- **[POSTGRES.md](POSTGRES.md)** — schema tabella, setup DB, query, troubleshooting

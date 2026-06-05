@@ -1,85 +1,108 @@
 services:
   counter:
-    build: .
-    image: frigate-counter:latest
-    container_name: frigate-counter
+    build:
+      context: .
+      args:
+        # === Scelta del modello (build-time) ===
+        # CONSIGLIATO per camera a soffitto / fisheye: head-detector (1 classe "head",
+        # addestrato su SCUT-HEAD) — molto meglio delle "persone" COCO viste dall'alto.
+        MODEL_URL: "https://raw.githubusercontent.com/Abcfsa/YOLOv8_head_detector/main/nano.pt"
+        # più accurato ma più lento: .../main/medium.pt
+        #
+        # Per vista frontale/laterale lascia vuoto MODEL_URL e usa COCO:
+        # YOLO_MODEL: yolov8n.pt     # o yolov8s.pt (più accurato)
+    image: person-counter:latest
+    container_name: person-counter
     restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
       - ./data:/data
+      # opzionale: monta un modello ONNX tuo (altrimenti usa quello in /models)
+      # - ./models:/models
     environment:
-      # ---- MQTT (Frigate broker) ----
-      MQTT_HOST: "192.168.1.10"
-      MQTT_PORT: "1883"
-      MQTT_USER: ""
-      MQTT_PASS: ""
+      # ===== Sorgente video RTSP / RTSPS (substream a bassa risoluzione) =====
+      RTSP_URL: "rtsp://user:pass@192.168.1.50:554/Streaming/Channels/102"
+      RTSP_TRANSPORT: "tcp"          # tcp (consigliato) | udp
+      CAPTURE_TIMEOUT_SEC: "5"
+      CAPTURE_RECONNECT_SEC: "3"
 
-      # ---- Camera ----
+      # ===== Detection YOLOv8n (CPU) =====
+      MODEL_PATH: "/models/model.onnx"
+      DETECT_FPS: "10"              # detection al secondo (alza/abbassa per CPU)
+      DETECT_CONF: "0.25"           # soglia confidenza (bassa = rileva prima)
+      DETECT_INPUT_SIZE: "640"
+      DETECT_IOU_NMS: "0.5"
+      ORT_THREADS: "4"             # core per l'inferenza (NUC: numero di core fisici)
+
+      # ===== Tracking (SORT) =====
+      TRACK_MAX_AGE: "15"
+      TRACK_MIN_HITS: "2"          # basso = conta anche transiti veloci
+      TRACK_IOU: "0.3"
+
+      # ===== Conteggio (linea + ROI) =====
       CAMERA_NAME: "ingresso"
-      FRAME_WIDTH: "1280"
-      FRAME_HEIGHT: "720"
-      ENTER_DIRECTION: "up"      # up = entrare = dal basso verso l'alto
-      POINT_MODE: "bottom"       # bottom | center
-
-      # ---- Modalità di conteggio ----
-      # line_cross  = robusto contro persone che stazionano (raccomandato)
-      # full_motion = vecchia logica delta_y/span/net_ratio
-      COUNT_MODE: "line_cross"
-      LINE_Y: "0.50"             # linea orizzontale 0..1 (alto..basso)
-      LINE_MARGIN: "0.08"        # zona morta sopra/sotto la linea
-
-      # ---- ROI / soglie movimento ----
-      MOTION_X1: "0.20"
-      MOTION_X2: "0.92"
+      ENTER_DIRECTION: "up"         # up = entra dal basso verso l'alto
+      POINT_MODE: "center"          # vista dall'alto/head-detector: center (centro testa)
+      LINE_Y: "0.50"
+      LINE_MARGIN: "0.08"
+      MOTION_X1: "0.05"
+      MOTION_X2: "0.95"
       MOTION_Y1: "0.05"
-      MOTION_Y2: "0.98"
-      MOTION_MIN_POINTS: "4"
-      MOTION_MIN_DELTA_Y: "0.16"
-      MOTION_MIN_SPAN_Y: "0.20"
-      MOTION_MIN_NET_RATIO: "0.45"
-      JITTER_DISTANCE: "0.015"
-      REQUIRED_ZONE: ""
+      MOTION_Y2: "0.95"
 
-      # ---- Frigate (per snapshot live nella pagina /settings) ----
-      FRIGATE_URL: "http://192.168.1.10:5000"
-      SNAPSHOT_REFRESH_SEC: "3"
+      # ===== Overlay snapshot =====
+      DRAW_OVERLAY: "1"
+      JPEG_QUALITY: "75"
+      SNAPSHOT_REFRESH_SEC: "2"
 
-      # ---- Webhook (POST JSON ad ogni enter/exit) ----
-      # Configurabile anche dalla UI in Impostazioni → Webhook
-      WEBHOOK_ENABLED: "0"
-      WEBHOOK_URL: ""
-      WEBHOOK_HEADERS: ""          # JSON string es. {"Authorization":"Bearer xyz"}
-      WEBHOOK_TIMEOUT: "4"
-      WEBHOOK_RETRY: "1"
-
-      # ---- Storage JSON (sempre attivo come backup locale) ----
+      # ===== Storage (JSON sempre attivo) =====
       LOG_DIR: "/data"
 
-      # ---- Auth (se vuote, dashboard PUBBLICA) ----
+      # ===== Auth (vuote = dashboard pubblica) =====
       AUTH_USER: "admin"
       AUTH_PASS: "cambia-questa-password"
       SECRET_KEY: "metti-qui-una-stringa-random-lunga"
       SESSION_DAYS: "7"
 
-      # ---- Postgres (se vuote, solo JSON) ----
+      # ===== PostgreSQL (vuote = solo JSON) =====
       DB_HOST: "postgres"
       DB_PORT: "5432"
-      DB_NAME: "frigate_counter"
+      DB_NAME: "person_counter"
       DB_USER: "counter"
       DB_PASS: "counter-pass"
       DB_SCHEMA: "public"
       DB_TABLE: "counter_events"
       DB_SSLMODE: "prefer"
+
+      # ===== MQTT OUTPUT opzionale (pubblica i contatori) =====
+      MQTT_ENABLED: "0"
+      MQTT_HOST: "192.168.1.10"
+      MQTT_PORT: "1883"
+      MQTT_USER: ""
+      MQTT_PASS: ""
+      MQTT_BASE_TOPIC: "counter"
+
+      # ===== Webhook opzionale (POST ad ogni enter/exit) =====
+      WEBHOOK_ENABLED: "0"
+      WEBHOOK_URL: ""
+      WEBHOOK_HEADERS: ""
+      WEBHOOK_TIMEOUT: "4"
+      WEBHOOK_RETRY: "1"
+    # Detection su CPU: opzionale limita i core per non saturare l'host
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "2.0"
     depends_on:
       - postgres
 
   postgres:
     image: postgres:16-alpine
-    container_name: frigate-counter-db
+    container_name: person-counter-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: frigate_counter
+      POSTGRES_DB: person_counter
       POSTGRES_USER: counter
       POSTGRES_PASSWORD: counter-pass
     volumes:

@@ -48,7 +48,7 @@ def notify(event_data: dict):
 def _build_headers():
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "frigate-counter-webhook/1.0",
+        "User-Agent": "person-counter-webhook/1.0",
     }
     raw = (Config.WEBHOOK_HEADERS or "").strip()
     if not raw:

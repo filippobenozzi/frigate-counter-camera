@@ -42,11 +42,11 @@ momento e non perdere nulla.
 ```sql
 CREATE TABLE counter_events (
     id              BIGSERIAL    PRIMARY KEY,
-    event_id        TEXT         NOT NULL,                  -- id Frigate
+    event_id        TEXT         NOT NULL,                  -- id evento (ts-track)
     camera          TEXT         NOT NULL,
     ts              TIMESTAMPTZ  NOT NULL,                  -- istante conteggio
     event_type      TEXT         NOT NULL CHECK (event_type IN ('enter','exit')),
-    method          TEXT,                                   -- 'line_cross' o 'full_motion'
+    method          TEXT,                                   -- es. 'yolo_line'
     start_x         REAL,                                   -- coordinate 0..1
     start_y         REAL,
     end_x           REAL,
@@ -100,7 +100,7 @@ postgres:
   image: postgres:16-alpine
   restart: unless-stopped
   environment:
-    POSTGRES_DB: frigate_counter
+    POSTGRES_DB: person_counter
     POSTGRES_USER: counter
     POSTGRES_PASSWORD: counter-pass
   volumes:
@@ -118,17 +118,17 @@ schema automaticamente la **prima** volta che Postgres parte (DB vuoto).
 1. Crea database e utente con permessi minimi:
 
    ```sql
-   CREATE DATABASE frigate_counter;
+   CREATE DATABASE person_counter;
    CREATE USER counter WITH PASSWORD 'cambia-questa-password';
-   GRANT CONNECT ON DATABASE frigate_counter TO counter;
-   \c frigate_counter
+   GRANT CONNECT ON DATABASE person_counter TO counter;
+   \c person_counter
    GRANT USAGE, CREATE ON SCHEMA public TO counter;
    ```
 
 2. (Opzionale) Crea la tabella tu stesso eseguendo lo schema:
 
    ```bash
-   psql -h <host> -U counter -d frigate_counter -f sql/schema.sql
+   psql -h <host> -U counter -d person_counter -f sql/schema.sql
    ```
 
    Oppure dimentica questo passo e lascia che l'app la crei al primo connect
@@ -189,7 +189,7 @@ WHERE camera = 'ingresso'
 | Badge `non connesso` | `DB_HOST` errato o irraggiungibile dal container counter | Verifica DNS / network Docker. Per servizi compose usa il nome servizio (es. `postgres`) non `localhost`. |
 | `psycopg2.OperationalError: FATAL: password authentication failed` | Password sbagliata | Reinserisci `DB_PASS` (campo masked: lascia `***` per non cambiare) |
 | `relation "..." does not exist` ai primi insert | Tabella non creata e utente senza `CREATE` | Esegui a mano `sql/schema.sql` con un utente che ha permessi |
-| `duplicate key value violates unique constraint` | Frigate ha rinviato lo stesso evento | Innocuo — il `ON CONFLICT DO NOTHING` lo gestisce, il messaggio non dovrebbe nemmeno comparire |
+| `duplicate key value violates unique constraint` | l'app ha rinviato lo stesso evento | Innocuo — il `ON CONFLICT DO NOTHING` lo gestisce, il messaggio non dovrebbe nemmeno comparire |
 | Storico Postgres "in ritardo" rispetto a `counts.json` | Postgres era irraggiungibile, eventi solo su JSON | Riallinea esportando da JSONL e reimportando con uno script ad hoc (i due storage divergono solo in scenari di downtime DB) |
 
 ---
@@ -200,8 +200,8 @@ Se hai accumulato eventi solo nel file e poi attivi Postgres, lo storico
 precedente **resta solo nel JSONL**. Per copiarlo in tabella:
 
 ```bash
-docker exec -i frigate-counter-db \
-  psql -U counter -d frigate_counter <<'SQL'
+docker exec -i person-counter-db \
+  psql -U counter -d person_counter <<'SQL'
 \copy counter_events (event_id, camera, ts, event_type, method,
                       start_x, start_y, end_x, end_y, reason,
                       enter_total, exit_total, occupancy)

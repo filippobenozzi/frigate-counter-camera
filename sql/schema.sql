@@ -1,21 +1,21 @@
 -- ============================================================================
--- Schema Postgres per Frigate Person Counter
+-- Schema Postgres per Person Counter
 --
 -- Una sola tabella `counter_events`: ogni riga = un attraversamento confermato
 -- (enter o exit). Da qui si ricavano i totali, il grafico orario e
 -- l'occupancy via view.
 --
--- Carica con:   psql -U counter -d frigate_counter -f sql/schema.sql
+-- Carica con:   psql -U counter -d person_counter -f sql/schema.sql
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS counter_events (
     id              BIGSERIAL    PRIMARY KEY,
-    event_id        TEXT         NOT NULL,                    -- id Frigate
+    event_id        TEXT         NOT NULL,                    -- id evento (ts-track)
     camera          TEXT         NOT NULL,
     ts              TIMESTAMPTZ  NOT NULL,                    -- istante conteggio
     event_type      TEXT         NOT NULL
                                   CHECK (event_type IN ('enter','exit')),
-    method          TEXT,                                     -- es. 'full_motion'
+    method          TEXT,                                     -- es. 'yolo_line'
 
     -- punto iniziale e finale del bounding box (normalizzati 0..1)
     start_x         REAL,

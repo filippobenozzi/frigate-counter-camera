@@ -12,1554 +12,718 @@
     :root {
       --bg:#000; --panel:#0d0d0d; --panel2:#161616; --panel3:#1f1f1f;
       --border:#262626; --border-st:#3a3a3a;
-      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999;
-      --dim:#666; --dimmer:#444;
-      --accent:#fff;
-      --line:#ffeb3b; --roi:#4fc3f7;
+      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999; --dim:#666; --dimmer:#444;
+      --accent:#fff; --line:#ffeb3b; --roi:#4fc3f7;
       --ok:#88dd88; --warn:#ffd58a; --err:#ffaaaa;
     }
-    body {
-      font-family:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    body { font-family:"Roboto Mono",ui-monospace,Menlo,monospace;
       background:var(--bg); color:var(--text); margin:0;
-      font-feature-settings:"tnum" 1, "zero" 1;
-      /* spazio in fondo per la save bar fixed */
-      padding-bottom:84px;
-    }
+      font-feature-settings:"tnum" 1,"zero" 1; padding-bottom:84px; }
 
-    /* ============ HEADER ============ */
-    header {
-      background:var(--panel); border-bottom:1px solid var(--border);
+    header { background:var(--panel); border-bottom:1px solid var(--border);
       padding:1rem 2rem; display:flex; align-items:center;
-      justify-content:space-between; flex-wrap:wrap; gap:1rem;
-    }
-    header h1 {
-      margin:0; font-size:.95rem; font-weight:700;
-      text-transform:uppercase; letter-spacing:.12em;
-    }
-    header h1 .cam{color:var(--accent)}
-    header h1 .sep{color:var(--dimmer); margin:0 .5rem}
+      justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+    header h1 { margin:0; font-size:.95rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.12em; }
+    header h1 .cam{color:var(--accent)} header h1 .sep{color:var(--dimmer);margin:0 .5rem}
     header h1 .crumb{color:var(--muted)}
     .actions{display:flex; gap:.4rem; align-items:center}
 
-    /* ============ TABS BAR ============ */
-    .tabs-bar {
-      background:var(--panel);
-      border-bottom:1px solid var(--border);
-      padding:0 2rem;
-      display:flex; gap:.25rem;
-      overflow-x:auto; scrollbar-width:none;
-    }
-    .tabs-bar::-webkit-scrollbar { display:none; }
-    .tab {
-      padding:.95rem 1.25rem;
-      background:transparent; color:var(--muted); border:0;
-      border-bottom:2px solid transparent;
-      font-family:inherit; font-size:.75rem; font-weight:500;
-      letter-spacing:.12em; text-transform:uppercase;
-      cursor:pointer; white-space:nowrap;
-      transition:color .15s, border-color .15s;
-      display:inline-flex; align-items:center; gap:.5rem;
-    }
-    .tab:hover { color:var(--text2); }
-    .tab.active {
-      color:var(--accent);
-      border-bottom-color:var(--accent);
-    }
-    .tab .ico {
-      font-size:1rem; line-height:1; opacity:.85;
-    }
-    .tab .badge-mini {
-      display:inline-block; min-width:18px; padding:.05rem .35rem;
-      background:var(--panel3); color:var(--muted);
-      font-size:.6rem; border-radius:2px; font-weight:600;
-      border:1px solid var(--border);
-    }
+    .tabs-bar { background:var(--panel); border-bottom:1px solid var(--border);
+      padding:0 2rem; display:flex; gap:.25rem; overflow-x:auto; }
+    .tab { padding:.95rem 1.25rem; background:transparent; color:var(--muted);
+      border:0; border-bottom:2px solid transparent; font-family:inherit;
+      font-size:.75rem; font-weight:500; letter-spacing:.12em;
+      text-transform:uppercase; cursor:pointer; white-space:nowrap;
+      display:inline-flex; align-items:center; gap:.5rem; }
+    .tab:hover{color:var(--text2)}
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab .ico{font-size:1rem; opacity:.85}
+    .tab-panel{display:none; padding:2rem; max-width:1400px; margin:0 auto}
+    .tab-panel.active{display:block}
 
-    .tab-panel {
-      display:none;
-      padding:2rem; max-width:1400px; margin:0 auto;
-    }
-    .tab-panel.active { display:block; }
-
-    /* ============ BUTTONS ============ */
-    .btn {
-      padding:.5rem .9rem; border-radius:3px;
-      background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); cursor:pointer;
+    .btn { padding:.5rem .9rem; border-radius:3px; background:var(--panel2);
+      color:var(--text); border:1px solid var(--border); cursor:pointer;
       font-size:.75rem; font-weight:500; letter-spacing:.08em;
       text-transform:uppercase; text-decoration:none; font-family:inherit;
       display:inline-flex; align-items:center; gap:.35rem;
-      transition:background .15s, border-color .15s;
-    }
-    .btn:hover{ background:var(--panel3); border-color:var(--border-st); }
-    .btn.primary {
-      background:var(--accent); color:var(--bg);
-      border-color:var(--accent); font-weight:700;
-    }
-    .btn.primary:hover{ background:#ccc; }
-    .btn.danger{ color:var(--text); border-color:var(--border-st); }
-    .btn.danger:hover{
-      background:#2a1414; border-color:#5a3030; color:#ffaaaa;
-    }
-    .btn.warn:hover{
-      background:#1f1a10; border-color:#5a4a20; color:#ffd58a;
-    }
-    .btn-mini{
-      font-size:.6rem; padding:.3rem .6rem;
-    }
+      transition:background .15s,border-color .15s; }
+    .btn:hover{background:var(--panel3); border-color:var(--border-st)}
+    .btn.primary{background:var(--accent); color:var(--bg);
+      border-color:var(--accent); font-weight:700}
+    .btn.primary:hover{background:#ccc}
+    .btn.danger{color:var(--text); border-color:var(--border-st)}
+    .btn.danger:hover{background:#2a1414; border-color:#5a3030; color:#ffaaaa}
+    .btn.warn:hover{background:#1f1a10; border-color:#5a4a20; color:#ffd58a}
+    .btn-mini{font-size:.6rem; padding:.3rem .6rem}
 
-    /* ============ SECTION TITLE ============ */
-    .section-title{
-      display:flex; align-items:center; justify-content:space-between;
-      margin:0 0 1rem;
-    }
-    .section-title:not(:first-child){ margin-top:2rem; }
-    .section-title h2{
-      margin:0; font-size:.7rem; color:var(--muted);
-      text-transform:uppercase; letter-spacing:.15em; font-weight:500;
-    }
-    .section-title h2::before{ content:"// "; color:var(--dimmer); }
-    .section-title .hint{
-      color:var(--dim); font-size:.7rem; letter-spacing:.05em;
-    }
+    .section-title{display:flex; align-items:center; justify-content:space-between;
+      margin:0 0 1rem}
+    .section-title:not(:first-child){margin-top:2rem}
+    .section-title h2{margin:0; font-size:.7rem; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.15em; font-weight:500}
+    .section-title h2::before{content:"// "; color:var(--dimmer)}
+    .section-title .hint{color:var(--dim); font-size:.7rem}
 
-    /* ============ TAB CAMERA: snapshot in alto, parametri sotto ============ */
-    .camera-split {
-      display:grid; gap:1.5rem; grid-template-columns:1fr;
-    }
-    /* il canvas a tutta larghezza diventerebbe enorme: lo limitiamo */
-    .canvas-panel { max-width:1100px; margin:0 auto; width:100%; }
-    /* i parametri sotto, una card sotto l'altra (stessa larghezza dello snapshot) */
-    .params-grid {
-      display:flex; flex-direction:column; gap:1rem;
-      max-width:1100px; margin:0 auto;
-    }
-    .params-grid .card { margin-bottom:0; }
-
-    /* ============ CANVAS PANEL ============ */
-    .canvas-panel{
-      background:var(--panel); border:1px solid var(--border);
-      border-radius:4px; padding:1rem; position:relative;
-    }
-    .canvas-wrap{
-      position:relative; width:100%; background:#000;
-      border:1px solid var(--border); border-radius:3px;
-      overflow:hidden; aspect-ratio:16/9;
-    }
-    .canvas-wrap img{
-      display:block; position:absolute; inset:0;
-      width:100%; height:100%; object-fit:contain;
-      pointer-events:none; user-select:none;
-    }
-    .canvas-wrap canvas{
-      position:absolute; inset:0; width:100%; height:100%;
-      cursor:crosshair;
-    }
-    .canvas-wrap.no-img::before{
-      content:"// snapshot non disponibile — controlla FRIGATE_URL"; color:var(--dim);
-      position:absolute; inset:0; display:flex;
-      align-items:center; justify-content:center;
-      font-size:.8rem; letter-spacing:.05em;
-    }
-    .canvas-toolbar{
-      display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
-      margin-top:.75rem;
-    }
-    .canvas-toolbar .legend{
-      display:flex; gap:.75rem; flex-wrap:wrap; color:var(--muted);
-      font-size:.7rem; letter-spacing:.05em; margin-left:auto;
-    }
-    .canvas-toolbar .legend .sw{
-      display:inline-block; width:10px; height:10px;
-      vertical-align:middle; margin-right:.35rem; border-radius:1px;
-    }
+    .camera-split{display:grid; gap:1.5rem; grid-template-columns:1fr}
+    .canvas-panel{background:var(--panel); border:1px solid var(--border);
+      border-radius:4px; padding:1rem; max-width:1100px; margin:0 auto; width:100%}
+    .canvas-wrap{position:relative; width:100%; background:#000;
+      border:1px solid var(--border); border-radius:3px; overflow:hidden;
+      aspect-ratio:16/9}
+    .canvas-wrap img{display:block; position:absolute; inset:0; width:100%;
+      height:100%; object-fit:contain; pointer-events:none; user-select:none}
+    .canvas-wrap canvas{position:absolute; inset:0; width:100%; height:100%;
+      cursor:crosshair}
+    .canvas-wrap.no-img::before{content:"// stream non disponibile — controlla RTSP_URL";
+      color:var(--dim); position:absolute; inset:0; display:flex;
+      align-items:center; justify-content:center; font-size:.8rem}
+    .canvas-toolbar{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
+      margin-top:.75rem}
+    .canvas-toolbar .legend{display:flex; gap:.75rem; flex-wrap:wrap;
+      color:var(--muted); font-size:.7rem; margin-left:auto}
+    .canvas-toolbar .legend .sw{display:inline-block; width:10px; height:10px;
+      vertical-align:middle; margin-right:.35rem; border-radius:1px}
     .canvas-toolbar .legend .sw.line{background:#ffeb3b}
     .canvas-toolbar .legend .sw.roi{background:#4fc3f7}
-    .canvas-toolbar .legend .sw.margin{background:rgba(255,235,59,.4)}
+    .canvas-toolbar .legend .sw.box{background:#fff}
     .canvas-toolbar .refresh{color:var(--dim); font-size:.7rem}
 
-    /* ============ FORM card ============ */
-    .card {
-      background:var(--panel); border:1px solid var(--border);
-      border-radius:4px; padding:1.25rem; margin-bottom:1rem;
-    }
-    .card h3 {
-      margin:0 0 1rem; font-size:.7rem;
-      text-transform:uppercase; letter-spacing:.15em;
-      color:var(--text); font-weight:500;
-      display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
-    }
-    .card h3::before{ content:"// "; color:var(--dimmer); }
-    .card h3 .restart-tag{
-      font-size:.55rem; font-weight:500; letter-spacing:.1em;
-      color:var(--warn); padding:.15rem .45rem;
-      background:rgba(255,213,138,.08);
-      border:1px solid rgba(255,213,138,.25);
-      border-radius:2px; text-transform:uppercase;
-    }
-    .card h3 .pg-badge{
-      font-size:.55rem; font-weight:500; letter-spacing:.1em;
-      padding:.15rem .45rem; background:var(--panel3);
-      color:var(--dim); border:1px solid var(--border);
-      border-radius:2px; text-transform:uppercase;
-    }
-    .card h3 .pg-badge.ok{
-      background:rgba(136,221,136,.08);
-      color:var(--ok); border-color:rgba(136,221,136,.25);
-    }
-    .card h3 .pg-badge.err{
-      background:rgba(255,170,170,.08);
-      color:var(--err); border-color:rgba(255,170,170,.25);
-    }
+    .params-grid{display:flex; flex-direction:column; gap:1rem;
+      max-width:1100px; margin:0 auto}
+    .card{background:var(--panel); border:1px solid var(--border);
+      border-radius:4px; padding:1.25rem; margin-bottom:1rem}
+    .params-grid .card{margin-bottom:0}
+    .card h3{margin:0 0 1rem; font-size:.7rem; text-transform:uppercase;
+      letter-spacing:.15em; color:var(--text); font-weight:500;
+      display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+    .card h3::before{content:"// "; color:var(--dimmer)}
+    .card h3 .restart-tag{font-size:.55rem; font-weight:500; letter-spacing:.1em;
+      color:var(--warn); padding:.15rem .45rem; background:rgba(255,213,138,.08);
+      border:1px solid rgba(255,213,138,.25); border-radius:2px;
+      text-transform:uppercase}
+    .card h3 .pg-badge{font-size:.55rem; font-weight:500; letter-spacing:.1em;
+      padding:.15rem .45rem; background:var(--panel3); color:var(--dim);
+      border:1px solid var(--border); border-radius:2px; text-transform:uppercase}
+    .card h3 .pg-badge.ok{background:rgba(136,221,136,.08); color:var(--ok);
+      border-color:rgba(136,221,136,.25)}
+    .card h3 .pg-badge.err{background:rgba(255,170,170,.08); color:var(--err);
+      border-color:rgba(255,170,170,.25)}
 
-    .help {
-      background:var(--panel2); border:1px solid var(--border);
-      border-left:3px solid var(--accent);
-      border-radius:3px; padding:.7rem .9rem;
-      font-size:.72rem; line-height:1.55;
-      color:var(--text2); margin-bottom:1rem;
-    }
-    .help.line { border-left-color:var(--line); }
-    .help.roi { border-left-color:var(--roi); }
-    .help p { margin:0; color:var(--muted); }
-    .help p + p { margin-top:.4rem; }
-    .help strong { color:var(--text); font-weight:500; }
-    .help code, .card code {
-      background:var(--bg); color:var(--text2);
-      padding:.05rem .35rem; border-radius:2px;
-      border:1px solid var(--border); font-size:.68rem;
-    }
-    .help summary {
-      cursor:pointer; user-select:none; color:var(--text);
-      font-weight:500; letter-spacing:.03em;
-    }
+    .help{background:var(--panel2); border:1px solid var(--border);
+      border-left:3px solid var(--accent); border-radius:3px; padding:.7rem .9rem;
+      font-size:.72rem; line-height:1.55; color:var(--text2); margin-bottom:1rem}
+    .help.line{border-left-color:var(--line)} .help.roi{border-left-color:var(--roi)}
+    .help p{margin:0; color:var(--muted)} .help p+p{margin-top:.4rem}
+    .help strong{color:var(--text); font-weight:500}
+    .help code, .card code{background:var(--bg); color:var(--text2);
+      padding:.05rem .35rem; border-radius:2px; border:1px solid var(--border);
+      font-size:.68rem}
+    .help summary{cursor:pointer; color:var(--text); font-weight:500}
 
-    /* ============ FIELDS ============ */
-    .field {
-      display:grid; grid-template-columns:1fr 110px;
-      gap:.6rem; align-items:center; margin-bottom:.6rem;
-    }
-    .field.full { grid-template-columns:1fr; }
-    .field label {
-      font-size:.72rem; color:var(--text2); letter-spacing:.02em;
-    }
-    .field label .desc {
-      display:block; color:var(--dim);
-      font-size:.6rem; margin-top:.15rem;
-      letter-spacing:.04em;
-    }
-    .field input, .field select, .field textarea {
-      background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); border-radius:3px;
-      padding:.45rem .55rem; font-size:.8rem;
-      font-family:inherit; text-align:right; width:100%;
-    }
-    .field select, .field textarea { text-align:left; }
-    .field textarea { resize:vertical; min-height:60px; }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      outline:none; border-color:var(--accent);
-    }
+    .field{display:grid; grid-template-columns:1fr 120px; gap:.6rem;
+      align-items:center; margin-bottom:.6rem}
+    .field.full{grid-template-columns:1fr}
+    .field label{font-size:.72rem; color:var(--text2)}
+    .field label .desc{display:block; color:var(--dim); font-size:.6rem;
+      margin-top:.15rem}
+    .field input, .field select, .field textarea{background:var(--panel2);
+      color:var(--text); border:1px solid var(--border); border-radius:3px;
+      padding:.45rem .55rem; font-size:.8rem; font-family:inherit;
+      text-align:right; width:100%}
+    .field select, .field textarea, .field input.text{text-align:left}
+    .field textarea{resize:vertical; min-height:60px}
+    .field input:focus, .field select:focus, .field textarea:focus{
+      outline:none; border-color:var(--accent)}
+    .field-range{display:grid; grid-template-columns:1fr 90px; gap:.5rem;
+      align-items:center; margin-bottom:.15rem}
+    .field-range input[type=range]{width:100%; accent-color:var(--accent)}
+    .row-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem}
+    .feedback{margin-top:.75rem; font-size:.72rem; color:var(--muted);
+      line-height:1.5; word-break:break-word}
+    .feedback .ok{color:var(--ok); font-weight:500}
+    .feedback .err{color:var(--err); font-weight:500}
 
-    .field-range {
-      display:grid; grid-template-columns:1fr 90px;
-      gap:.5rem; align-items:center; margin-bottom:.15rem;
-    }
-    .field-range input[type=range]{
-      width:100%; accent-color:var(--accent);
-    }
-
-    .row-actions{
-      display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;
-    }
-    .feedback{
-      margin-top:.75rem; font-size:.72rem;
-      color:var(--muted); line-height:1.5; word-break:break-word;
-    }
-    .feedback:empty { margin-top:0; }
-    .feedback .ok { color:var(--ok); font-weight:500; }
-    .feedback .err{ color:var(--err); font-weight:500; }
-
-    /* ============ STATUS GRID (Sistema) ============ */
-    .status-grid{
-      display:grid; gap:1px;
-      grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    .status-grid{display:grid; gap:1px;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
       background:var(--border); border:1px solid var(--border);
-      border-radius:4px; overflow:hidden; margin-bottom:2rem;
-    }
-    .stat{ background:var(--panel); padding:1rem 1.25rem; }
-    .stat .lbl{
-      color:var(--muted); font-size:.6rem;
-      text-transform:uppercase; letter-spacing:.15em;
-      font-weight:500; margin-bottom:.4rem;
-    }
-    .stat .val{
-      font-size:1.4rem; font-weight:500; line-height:1.1;
-      letter-spacing:-.02em; word-break:break-all;
-    }
-    .stat .val.dim{ color:var(--dim); font-size:.9rem; font-weight:300; }
-    .stat .sub{
-      color:var(--dim); font-size:.65rem;
-      margin-top:.35rem; letter-spacing:.05em;
-    }
+      border-radius:4px; overflow:hidden; margin-bottom:2rem}
+    .stat{background:var(--panel); padding:1rem 1.25rem}
+    .stat .lbl{color:var(--muted); font-size:.6rem; text-transform:uppercase;
+      letter-spacing:.15em; font-weight:500; margin-bottom:.4rem}
+    .stat .val{font-size:1.4rem; font-weight:500; line-height:1.1;
+      word-break:break-all}
+    .stat .val.dim{color:var(--dim); font-size:.9rem; font-weight:300}
+    .stat .sub{color:var(--dim); font-size:.65rem; margin-top:.35rem}
 
-    /* ============ RESET ACTIONS ============ */
-    .action{
-      background:var(--panel); border:1px solid var(--border);
-      border-left:3px solid var(--dimmer); border-radius:4px;
-      padding:1.5rem; margin-bottom:1rem;
-      display:grid; grid-template-columns:1fr auto;
-      gap:1.5rem; align-items:start;
-    }
-    .action.danger{ border-left-color:#aa3030; }
-    .action.warn{   border-left-color:#aa7720; }
-    .action.safe{   border-left-color:#4a4a4a; }
-    .action .desc h4{
-      margin:0 0 .35rem; font-size:.8rem; font-weight:700;
-      text-transform:uppercase; letter-spacing:.1em;
-    }
-    .action .desc p{
-      margin:0; color:var(--muted); font-size:.8rem; line-height:1.6;
-    }
-    .action .desc small{
-      display:block; color:var(--dim); font-size:.7rem;
-      margin-top:.5rem; letter-spacing:.03em;
-    }
-    .action .ctrl{
-      display:flex; flex-direction:column;
-      gap:.5rem; min-width:230px;
-    }
-    .action .ctrl input[type=date]{
-      background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); border-radius:3px;
-      padding:.5rem .7rem; font-size:.8rem;
-      font-family:inherit; color-scheme:dark; width:100%;
-    }
-    .action .ctrl input[type=date]:focus{
-      outline:none; border-color:var(--accent);
-    }
-    .action .ctrl .btn{ justify-content:center; }
-    @media (max-width:720px){
-      .action{ grid-template-columns:1fr; }
-      .action .ctrl{ min-width:0; }
-    }
+    .action{background:var(--panel); border:1px solid var(--border);
+      border-left:3px solid var(--dimmer); border-radius:4px; padding:1.5rem;
+      margin-bottom:1rem; display:grid; grid-template-columns:1fr auto;
+      gap:1.5rem; align-items:start}
+    .action.danger{border-left-color:#aa3030}
+    .action.warn{border-left-color:#aa7720}
+    .action.safe{border-left-color:#4a4a4a}
+    .action .desc h4{margin:0 0 .35rem; font-size:.8rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.1em}
+    .action .desc p{margin:0; color:var(--muted); font-size:.8rem; line-height:1.6}
+    .action .desc small{display:block; color:var(--dim); font-size:.7rem;
+      margin-top:.5rem}
+    .action .ctrl{display:flex; flex-direction:column; gap:.5rem; min-width:230px}
+    .action .ctrl input[type=date]{background:var(--panel2); color:var(--text);
+      border:1px solid var(--border); border-radius:3px; padding:.5rem .7rem;
+      font-size:.8rem; font-family:inherit; color-scheme:dark; width:100%}
+    .action .ctrl .btn{justify-content:center}
+    @media (max-width:720px){.action{grid-template-columns:1fr}.action .ctrl{min-width:0}}
 
-    /* ============ SAVE BAR fixed (ancorata in fondo alla viewport) ============ */
-    .save-bar {
-      position:fixed; bottom:0; left:0; right:0; z-index:50;
-      background:var(--panel);
-      border-top:1px solid var(--border);
-      padding:1rem 2rem;
-      display:flex; gap:.5rem; align-items:center;
-      flex-wrap:wrap;
-      box-shadow:0 -8px 24px rgba(0,0,0,.6);
-    }
-    .save-bar .save-feedback {
-      flex:1; min-height:1rem; font-size:.75rem;
-      color:var(--muted); line-height:1.4;
-    }
-    .save-bar .save-feedback .ok { color:var(--ok); font-weight:500; }
-    .save-bar .save-feedback .err{ color:var(--err); font-weight:500; }
-    .save-bar .save-feedback .warn{ color:var(--warn); font-weight:500; }
+    .save-bar{position:fixed; bottom:0; left:0; right:0; z-index:50;
+      background:var(--panel); border-top:1px solid var(--border);
+      padding:1rem 2rem; display:flex; gap:.5rem; align-items:center;
+      flex-wrap:wrap; box-shadow:0 -8px 24px rgba(0,0,0,.6)}
+    .save-bar .save-feedback{flex:1; min-height:1rem; font-size:.75rem;
+      color:var(--muted); line-height:1.4}
+    .save-bar .save-feedback .ok{color:var(--ok); font-weight:500}
+    .save-bar .save-feedback .err{color:var(--err); font-weight:500}
+    .save-bar .save-feedback .warn{color:var(--warn); font-weight:500}
 
-    /* ============ MISC ============ */
-    pre.sql-out {
-      margin:.5rem 0 0; padding:.7rem;
-      background:var(--bg); border:1px solid var(--border);
-      border-radius:3px; max-height:300px; overflow:auto;
-      font-size:.65rem; color:var(--text2); white-space:pre;
-    }
-    .snap-error {
-      margin-top:.75rem; padding:.85rem 1rem;
-      background:#1a0f0f; border:1px solid #5a3030;
-      border-left:3px solid #aa3030; border-radius:3px;
-      font-size:.78rem; line-height:1.5; color:#ffcccc;
-    }
-    .snap-error pre {
-      white-space:pre-wrap; word-break:break-all;
-      margin:.5rem 0 0; padding:.5rem; background:#000;
-      border:1px solid #3a1a1a; border-radius:2px;
-      font-size:.7rem; color:#cc9999;
-      max-height:220px; overflow:auto;
-    }
-
-    ::-webkit-scrollbar { width:10px; height:10px; }
-    ::-webkit-scrollbar-track { background:var(--bg); }
-    ::-webkit-scrollbar-thumb {
-      background:var(--border-st); border-radius:5px;
-      border:2px solid var(--bg);
-    }
-    ::-webkit-scrollbar-thumb:hover { background:var(--dim); }
+    pre.out{margin:.5rem 0 0; padding:.7rem; background:var(--bg);
+      border:1px solid var(--border); border-radius:3px; max-height:300px;
+      overflow:auto; font-size:.65rem; color:var(--text2); white-space:pre}
+    .snap-error{margin-top:.75rem; padding:.85rem 1rem; background:#1a0f0f;
+      border:1px solid #5a3030; border-left:3px solid #aa3030; border-radius:3px;
+      font-size:.78rem; line-height:1.5; color:#ffcccc}
+    ::-webkit-scrollbar{width:10px; height:10px}
+    ::-webkit-scrollbar-thumb{background:var(--border-st); border-radius:5px;
+      border:2px solid var(--bg)}
   </style>
 </head>
 <body>
 
 <header>
-  <h1>
-    Person Counter <span class="sep">/</span>
-    <span class="cam">{{ camera }}</span>
-    <span class="sep">/</span>
-    <span class="crumb">Impostazioni</span>
-  </h1>
+  <h1>Person Counter <span class="sep">/</span>
+      <span class="cam">{{ camera }}</span>
+      <span class="sep">/</span><span class="crumb">Impostazioni</span></h1>
   <div class="actions">
     <a class="btn" href="/">← Dashboard</a>
     {% if auth_enabled %}<a class="btn" href="/logout">Logout</a>{% endif %}
   </div>
 </header>
 
-<!-- ============ TABS BAR ============ -->
 <div class="tabs-bar" role="tablist">
-  <button class="tab active" data-tab="camera" role="tab">
-    <span class="ico">▣</span> Camera
-  </button>
-  <button class="tab" data-tab="advanced" role="tab">
-    <span class="ico">⚙</span> Avanzate
-  </button>
-  <button class="tab" data-tab="integrations" role="tab">
-    <span class="ico">⇄</span> Integrazioni
-  </button>
-  <button class="tab" data-tab="system" role="tab">
-    <span class="ico">▤</span> Sistema
-  </button>
+  <button class="tab active" data-tab="camera"><span class="ico">▣</span> Camera</button>
+  <button class="tab" data-tab="detection"><span class="ico">⚙</span> Detection</button>
+  <button class="tab" data-tab="integrations"><span class="ico">⇄</span> Integrazioni</button>
+  <button class="tab" data-tab="system"><span class="ico">▤</span> Sistema</button>
 </div>
 
 <form id="settings-form" onsubmit="return false">
 
-<!-- =================================================================
-     TAB 1: CAMERA — visualizzatore + linea/ROI + modalità conteggio
-     ================================================================= -->
+<!-- ============ TAB CAMERA ============ -->
 <section class="tab-panel active" data-panel="camera">
-
   <div class="camera-split">
-
-    <!-- ---- IN ALTO: snapshot live + canvas ---- -->
     <div>
       <div class="section-title">
-        <h2>Visualizzatore camera</h2>
-        <span class="hint">trascina la linea o i bordi della ROI</span>
+        <h2>Visualizzatore live</h2>
+        <span class="hint">box rilevati + trascina linea/ROI</span>
       </div>
       <div class="canvas-panel">
-        <div class="canvas-wrap {% if not frigate_url_set %}no-img{% endif %}"
-             id="canvas-wrap">
-          <img id="snap" alt="" {% if not frigate_url_set %}style="display:none"{% endif %}>
+        <div class="canvas-wrap {% if not rtsp_configured %}no-img{% endif %}" id="canvas-wrap">
+          <img id="snap" alt="" {% if not rtsp_configured %}style="display:none"{% endif %}>
           <canvas id="overlay"></canvas>
         </div>
         <div class="canvas-toolbar">
-          <button class="btn" type="button" id="btn-refresh">↻ Snapshot</button>
-          <button class="btn" type="button" id="btn-diag">Diagnostica</button>
+          <button class="btn" type="button" id="btn-refresh">↻ Aggiorna</button>
+          <button class="btn" type="button" id="btn-diag">Stato stream</button>
           <label style="display:flex; align-items:center; gap:.4rem;
-                        color:var(--muted); font-size:.7rem;
-                        text-transform:uppercase; letter-spacing:.08em">
+                 color:var(--muted); font-size:.7rem; text-transform:uppercase">
             <input type="checkbox" id="auto-refresh" checked>
-            Auto refresh ({{ snapshot_refresh }}s)
+            Auto ({{ snapshot_refresh }}s)
           </label>
           <span class="refresh" id="refresh-meta"></span>
           <div class="legend">
+            <span><span class="sw box"></span>Persona</span>
             <span><span class="sw line"></span>Linea</span>
-            <span><span class="sw margin"></span>Zona morta</span>
             <span><span class="sw roi"></span>ROI</span>
           </div>
         </div>
-
         <div id="snap-error" class="snap-error" style="display:none">
           <div id="snap-error-msg" style="font-weight:500"></div>
-          <div id="snap-error-hint"
-               style="color:#cc8888; margin-top:.4rem; font-size:.72rem"></div>
-          <details style="margin-top:.5rem; color:#aa6666; font-size:.7rem">
-            <summary style="cursor:pointer">dettagli tecnici</summary>
-            <pre id="snap-error-pre"></pre>
-          </details>
+          <div id="snap-error-hint" style="color:#cc8888; margin-top:.4rem; font-size:.72rem"></div>
+          <pre class="out" id="snap-error-pre" style="display:none"></pre>
         </div>
       </div>
     </div>
 
-    <!-- ---- IN BASSO: parametri visuali in griglia ---- -->
     <div>
-      <div class="section-title">
-        <h2>Parametri visuali</h2>
-      </div>
-
+      <div class="section-title"><h2>Parametri conteggio</h2></div>
       <div class="params-grid">
-      <div class="card">
-        <h3>Camera</h3>
-        <div class="field">
-          <label>Nome camera
-            <span class="desc">deve coincidere con frigate.yml</span>
-          </label>
-          <input type="text" name="CAMERA" id="camera-input"
-                 list="camera-list" autocomplete="off">
-          <datalist id="camera-list"></datalist>
+        <div class="card">
+          <h3>Camera &amp; direzione</h3>
+          <div class="field">
+            <label>Nome camera <span class="desc">etichetta nei dati/MQTT</span></label>
+            <input class="text" type="text" name="CAMERA" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Direzione ingresso <span class="desc">up = entra dal basso</span></label>
+            <select name="ENTER_DIRECTION"><option value="up">up</option><option value="down">down</option></select>
+          </div>
+          <div class="field">
+            <label>Punto di tracking <span class="desc">bottom = piedi · center = box</span></label>
+            <select name="POINT_MODE"><option value="bottom">bottom</option><option value="center">center</option></select>
+          </div>
         </div>
-        <div class="row-actions">
-          <button class="btn btn-mini" type="button" id="btn-load-cameras">
-            ↻ Carica camere
-          </button>
-          <span id="cameras-msg"
-                style="color:var(--dim); font-size:.7rem; align-self:center"></span>
+
+        <div class="card">
+          <h3>Linea di attraversamento</h3>
+          <div class="help line"><p>La <strong>linea gialla</strong> è la soglia
+            da attraversare. La banda (margine) è la "zona morta": chi non la
+            supera da un lato all'altro non conta. Elimina chi staziona davanti.</p></div>
+          <div class="field-range"><input type="range" name="LINE_Y" min="0" max="1" step="0.01"><input type="number" name="LINE_Y_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>LINE_Y <span class="desc">posizione 0..1</span></label><span></span></div>
+          <div class="field-range"><input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01"><input type="number" name="LINE_MARGIN_num" min="0" max="0.45" step="0.01"></div>
+          <div class="field"><label>LINE_MARGIN <span class="desc">zona morta</span></label><span></span></div>
+        </div>
+
+        <div class="card">
+          <h3>ROI</h3>
+          <div class="help roi"><p><strong>Region Of Interest</strong>: solo i
+            movimenti dentro il rettangolo azzurro contano. Restringila alla zona
+            della porta per ignorare passaggi sullo sfondo.</p></div>
+          <div class="field-range"><input type="range" name="MOTION_X1" min="0" max="1" step="0.01"><input type="number" name="MOTION_X1_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>MOTION_X1 <span class="desc">sinistra</span></label><span></span></div>
+          <div class="field-range"><input type="range" name="MOTION_X2" min="0" max="1" step="0.01"><input type="number" name="MOTION_X2_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>MOTION_X2 <span class="desc">destra</span></label><span></span></div>
+          <div class="field-range"><input type="range" name="MOTION_Y1" min="0" max="1" step="0.01"><input type="number" name="MOTION_Y1_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>MOTION_Y1 <span class="desc">alto</span></label><span></span></div>
+          <div class="field-range"><input type="range" name="MOTION_Y2" min="0" max="1" step="0.01"><input type="number" name="MOTION_Y2_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>MOTION_Y2 <span class="desc">basso</span></label><span></span></div>
         </div>
       </div>
-
-      <div class="card">
-        <h3>Modalità conteggio</h3>
-        <div class="field">
-          <label>Algoritmo
-            <span class="desc">line_cross = robusto (raccomandato)</span>
-          </label>
-          <select name="COUNT_MODE">
-            <option value="line_cross">line_cross</option>
-            <option value="full_motion">full_motion</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Direzione ingresso
-            <span class="desc">up = entra dal basso</span>
-          </label>
-          <select name="ENTER_DIRECTION">
-            <option value="up">up</option>
-            <option value="down">down</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Punto di tracking
-            <span class="desc">bottom = piedi · center = box</span>
-          </label>
-          <select name="POINT_MODE">
-            <option value="bottom">bottom</option>
-            <option value="center">center</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Linea di attraversamento</h3>
-        <div class="help line">
-          <p>
-            La <strong>linea gialla</strong> è la soglia che la persona deve
-            attraversare per essere contata. La <strong>banda</strong>
-            attorno (margine) è una "zona morta": chi non la supera <em>da
-            un lato all'altro</em> non conta. Questo elimina i falsi positivi
-            di chi staziona davanti alla porta.
-          </p>
-        </div>
-        <div class="field-range">
-          <input type="range" name="LINE_Y" min="0" max="1" step="0.01">
-          <input type="number" name="LINE_Y_num"
-                 min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>LINE_Y <span class="desc">posizione verticale 0..1</span></label>
-          <span></span>
-        </div>
-        <div class="field-range">
-          <input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01">
-          <input type="number" name="LINE_MARGIN_num"
-                 min="0" max="0.45" step="0.01">
-        </div>
-        <div class="field">
-          <label>LINE_MARGIN <span class="desc">ampiezza zona morta</span></label>
-          <span></span>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>ROI</h3>
-        <div class="help roi">
-          <p><strong>ROI = Region Of Interest.</strong> È il rettangolo
-            azzurro: solo i movimenti che cadono <strong>dentro</strong>
-            vengono considerati. Quelli fuori (sfondo, marciapiede, finestre
-            laterali) sono ignorati.</p>
-          <details style="margin-top:.5rem">
-            <summary>Esempio</summary>
-            <p style="margin-top:.5rem">
-              Se la camera inquadra l'ingresso ma vede anche un corridoio
-              dietro, restringi la ROI alla sola area della porta: chi passa
-              in fondo al corridoio finisce fuori dal rettangolo e non viene
-              contato.
-            </p>
-          </details>
-        </div>
-        <div class="field-range">
-          <input type="range" name="MOTION_X1" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_X1_num"
-                 min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_X1 <span class="desc">bordo sinistro</span></label>
-          <span></span>
-        </div>
-        <div class="field-range">
-          <input type="range" name="MOTION_X2" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_X2_num"
-                 min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_X2 <span class="desc">bordo destro</span></label>
-          <span></span>
-        </div>
-        <div class="field-range">
-          <input type="range" name="MOTION_Y1" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_Y1_num"
-                 min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_Y1 <span class="desc">bordo alto</span></label>
-          <span></span>
-        </div>
-        <div class="field-range">
-          <input type="range" name="MOTION_Y2" min="0" max="1" step="0.01">
-          <input type="number" name="MOTION_Y2_num"
-                 min="0" max="1" step="0.01">
-        </div>
-        <div class="field">
-          <label>MOTION_Y2 <span class="desc">bordo basso</span></label>
-          <span></span>
-        </div>
-      </div>
-      </div>  <!-- /.params-grid -->
-
     </div>
   </div>
 </section>
 
+<!-- ============ TAB DETECTION ============ -->
+<section class="tab-panel" data-panel="detection">
+  <div class="section-title"><h2>Detection &amp; tracking</h2>
+    <span class="hint">equilibrio accuratezza / carico CPU</span></div>
 
-<!-- =================================================================
-     TAB 2: AVANZATE — soglie movimento + tracking
-     ================================================================= -->
-<section class="tab-panel" data-panel="advanced">
-
-  <div class="section-title">
-    <h2>Parametri avanzati</h2>
-    <span class="hint">
-      modifica solo se sai cosa stai facendo
-    </span>
+  <div class="card">
+    <h3>Detection (YOLOv8n ONNX)</h3>
+    <div class="help"><p>Più <code>DETECT_FPS</code> = più reattivo ma più CPU.
+      Su un NUC tieni 6–10. <code>DETECT_CONF</code> alza per meno falsi positivi,
+      abbassa se perde persone. <code>ORT_THREADS</code> = core dedicati all'inferenza.</p></div>
+    <div class="field"><label>DETECT_FPS <span class="desc">detection al secondo</span></label><input type="number" name="DETECT_FPS" min="1" max="30" step="0.5"></div>
+    <div class="field"><label>DETECT_CONF <span class="desc">soglia confidenza</span></label><input type="number" name="DETECT_CONF" min="0.05" max="0.95" step="0.05"></div>
+    <div class="field"><label>DETECT_IOU_NMS <span class="desc">soppressione box sovrapposti</span></label><input type="number" name="DETECT_IOU_NMS" min="0.1" max="0.9" step="0.05"></div>
+    <div class="field"><label>MAX_DETECTIONS <span class="desc">persone max per frame</span></label><input type="number" name="MAX_DETECTIONS" min="1" max="200" step="1"></div>
+    <div class="field"><label>DETECT_INPUT_SIZE <span class="desc">lato rete (restart)</span></label><input type="number" name="DETECT_INPUT_SIZE" min="160" max="1280" step="32"></div>
+    <div class="field"><label>ORT_THREADS <span class="desc">0=auto (restart)</span></label><input type="number" name="ORT_THREADS" min="0" max="32" step="1"></div>
+    <div class="field"><label>MODEL_PATH <span class="desc">file .onnx (restart)</span></label><input class="text" type="text" name="MODEL_PATH"></div>
   </div>
 
   <div class="card">
-    <h3>Soglie movimento (modalità full_motion)</h3>
-    <div class="help">
-      <p>
-        Questi parametri sono usati <strong>solo</strong> dalla modalità
-        <code>full_motion</code>. In modalità <code>line_cross</code> (default)
-        vengono ignorati eccetto <code>MOTION_MIN_POINTS</code>.
-      </p>
-    </div>
-    <div class="field">
-      <label>MOTION_MIN_POINTS
-        <span class="desc">punti minimi del track</span></label>
-      <input type="number" name="MOTION_MIN_POINTS" min="2" max="50" step="1">
-    </div>
-    <div class="field">
-      <label>MOTION_MIN_DELTA_Y
-        <span class="desc">spostamento Y minimo</span></label>
-      <input type="number" name="MOTION_MIN_DELTA_Y"
-             min="0" max="1" step="0.01">
-    </div>
-    <div class="field">
-      <label>MOTION_MIN_SPAN_Y
-        <span class="desc">escursione Y minima</span></label>
-      <input type="number" name="MOTION_MIN_SPAN_Y"
-             min="0" max="1" step="0.01">
-    </div>
-    <div class="field">
-      <label>MOTION_MIN_NET_RATIO
-        <span class="desc">delta/span minimo (filtra avanti/indietro)</span></label>
-      <input type="number" name="MOTION_MIN_NET_RATIO"
-             min="0" max="1" step="0.01">
-    </div>
+    <h3>Tracking (SORT) <span class="restart-tag">richiede restart</span></h3>
+    <div class="help"><p>Mantiene l'identità delle persone tra i frame.
+      <code>TRACK_MAX_AGE</code> = quanti frame tenere una persona "persa";
+      <code>TRACK_MIN_HITS</code> = frame minimi prima di confermarla (anti-flicker);
+      <code>TRACK_IOU</code> = quanto devono sovrapporsi i box per essere la stessa persona.</p></div>
+    <div class="field"><label>TRACK_MAX_AGE</label><input type="number" name="TRACK_MAX_AGE" min="1" max="120" step="1"></div>
+    <div class="field"><label>TRACK_MIN_HITS</label><input type="number" name="TRACK_MIN_HITS" min="1" max="20" step="1"></div>
+    <div class="field"><label>TRACK_IOU</label><input type="number" name="TRACK_IOU" min="0.05" max="0.9" step="0.05"></div>
   </div>
 
   <div class="card">
-    <h3>Tracking</h3>
-    <div class="field">
-      <label>JITTER_DISTANCE
-        <span class="desc">filtra micro-movimenti</span></label>
-      <input type="number" name="JITTER_DISTANCE"
-             min="0" max="0.2" step="0.005">
-    </div>
-    <div class="field">
-      <label>TRACK_TTL
-        <span class="desc">sec. di vita di un track inattivo</span></label>
-      <input type="number" name="TRACK_TTL" min="1" max="300" step="1">
-    </div>
-    <div class="field">
-      <label>TRACK_POINTS_MAX
-        <span class="desc">cap punti per track</span></label>
-      <input type="number" name="TRACK_POINTS_MAX"
-             min="10" max="2000" step="10">
-    </div>
+    <h3>Overlay / snapshot</h3>
+    <div class="field"><label>DRAW_OVERLAY <span class="desc">disegna box/linea sullo snapshot</span></label>
+      <select name="DRAW_OVERLAY"><option value="true">sì</option><option value="false">no</option></select></div>
+    <div class="field"><label>JPEG_QUALITY</label><input type="number" name="JPEG_QUALITY" min="30" max="95" step="1"></div>
+    <div class="field"><label>SNAPSHOT_REFRESH_SEC <span class="desc">refresh UI</span></label><input type="number" name="SNAPSHOT_REFRESH_SEC" min="0.5" max="60" step="0.5"></div>
   </div>
-
-  <div class="card">
-    <h3>Frame / zona Frigate</h3>
-    <div class="field">
-      <label>FRAME_W
-        <span class="desc">larghezza frame in pixel</span></label>
-      <input type="number" name="FRAME_W" min="320" max="7680" step="1">
-    </div>
-    <div class="field">
-      <label>FRAME_H
-        <span class="desc">altezza frame in pixel</span></label>
-      <input type="number" name="FRAME_H" min="240" max="4320" step="1">
-    </div>
-    <div class="field">
-      <label>REQUIRED_ZONE
-        <span class="desc">conta solo eventi in questa zona Frigate (vuoto = tutte)</span></label>
-      <input type="text" name="REQUIRED_ZONE" autocomplete="off">
-    </div>
-  </div>
-
 </section>
 
-
-<!-- =================================================================
-     TAB 3: INTEGRAZIONI — MQTT, Frigate, Postgres, Webhook
-     ================================================================= -->
+<!-- ============ TAB INTEGRAZIONI ============ -->
 <section class="tab-panel" data-panel="integrations">
+  <div class="section-title"><h2>Sorgente &amp; integrazioni</h2></div>
 
-  <div class="section-title">
-    <h2>Integrazioni esterne</h2>
-  </div>
-
-  <!-- ---- MQTT ---- -->
   <div class="card">
-    <h3>MQTT broker <span class="restart-tag">richiede restart</span></h3>
-    <div class="help">
-      <p>
-        Il counter si connette al broker MQTT del Frigate e si sottoscrive
-        al topic <code>frigate/events</code>. Pubblica anche i totali su
-        <code>counter/&lt;camera&gt;/enter</code>,
-        <code>/exit</code> e <code>/occupancy</code> (retained).
-      </p>
-    </div>
-    <div class="field">
-      <label>MQTT_HOST
-        <span class="desc">IP o hostname del broker</span></label>
-      <input type="text" name="MQTT_HOST" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>MQTT_PORT</label>
-      <input type="number" name="MQTT_PORT" min="1" max="65535">
-    </div>
-    <div class="field">
-      <label>MQTT_USER
-        <span class="desc">vuoto = no auth</span></label>
-      <input type="text" name="MQTT_USER" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>MQTT_PASS</label>
-      <input type="password" name="MQTT_PASS"
-             autocomplete="new-password" placeholder="•••">
-    </div>
-  </div>
-
-  <!-- ---- FRIGATE ---- -->
-  <div class="card">
-    <h3>Frigate API</h3>
-    <div class="help">
-      <p>
-        Serve solo per lo <strong>snapshot live</strong> nel tab Camera.
-        Senza, tutto il resto funziona ma non vedi l'immagine.
-      </p>
-      <p style="margin-top:.4rem">
-        Se Frigate è in un altro container dello stesso compose, usa il
-        nome del servizio Docker (es. <code>http://frigate:5000</code>).
-      </p>
-    </div>
-    <div class="field">
-      <label>FRIGATE_URL
-        <span class="desc">base URL senza trailing slash</span></label>
-      <input type="url" name="FRIGATE_URL"
-             placeholder="http://frigate:5000">
-    </div>
-    <div class="field">
-      <label>SNAPSHOT_REFRESH_SEC
-        <span class="desc">intervallo auto-refresh</span></label>
-      <input type="number" name="SNAPSHOT_REFRESH_SEC"
-             min="0.5" max="60" step="0.5">
-    </div>
-  </div>
-
-  <!-- ---- POSTGRES ---- -->
-  <div class="card">
-    <h3>PostgreSQL
-      <span class="pg-badge" id="pg-status-badge">non connesso</span>
-    </h3>
-    <div class="help">
-      <p>
-        Storage esterno per gli eventi storici. Con Postgres attivo la
-        dashboard storica diventa molto più rapida; senza, viene usato
-        solo il file <code>events.jsonl</code>.
-      </p>
-      <details style="margin-top:.4rem">
-        <summary>Come setupparlo</summary>
-        <p style="margin-top:.5rem">
-          1. Compila i campi qui sotto.<br>
-          2. Clicca <strong>↻ Testa connessione</strong>: verifica che l'app
-          si colleghi e ti dice se la tabella esiste.<br>
-          3. Se la tabella manca e l'utente DB ha permessi
-          <code>CREATE</code>, viene creata in automatico al salvataggio.
-          Altrimenti clicca <strong>▤ Mostra SQL</strong>, copia ed esegui
-          come superuser.
-        </p>
-      </details>
-    </div>
-    <div class="field">
-      <label>DB_HOST</label>
-      <input type="text" name="DB_HOST" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>DB_PORT</label>
-      <input type="number" name="DB_PORT" min="1" max="65535">
-    </div>
-    <div class="field">
-      <label>DB_NAME</label>
-      <input type="text" name="DB_NAME" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>DB_USER</label>
-      <input type="text" name="DB_USER" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>DB_PASS</label>
-      <input type="password" name="DB_PASS"
-             autocomplete="new-password" placeholder="•••">
-    </div>
-    <div class="field">
-      <label>DB_SCHEMA</label>
-      <input type="text" name="DB_SCHEMA" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>DB_TABLE</label>
-      <input type="text" name="DB_TABLE" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>DB_SSLMODE</label>
-      <select name="DB_SSLMODE">
-        <option value="disable">disable</option>
-        <option value="allow">allow</option>
-        <option value="prefer">prefer</option>
-        <option value="require">require</option>
-        <option value="verify-ca">verify-ca</option>
-        <option value="verify-full">verify-full</option>
-      </select>
-    </div>
+    <h3>Sorgente RTSP / RTSPS <span class="restart-tag">richiede restart</span></h3>
+    <div class="help"><p>URL dello stream della telecamera. Consigliato un
+      <strong>substream a bassa risoluzione</strong> (~640px) per non saturare la CPU.
+      Esempio: <code>rtsp://user:pass@ip:554/Streaming/Channels/102</code> oppure
+      <code>rtsps://...</code>.</p></div>
+    <div class="field"><label>RTSP_URL</label><input class="text" type="text" name="RTSP_URL" placeholder="rtsp://user:pass@ip:554/..." autocomplete="off"></div>
+    <div class="field"><label>RTSP_TRANSPORT <span class="desc">tcp consigliato</span></label>
+      <select name="RTSP_TRANSPORT"><option value="tcp">tcp</option><option value="udp">udp</option></select></div>
+    <div class="field"><label>CAPTURE_TIMEOUT_SEC <span class="desc">timeout lettura</span></label><input type="number" name="CAPTURE_TIMEOUT_SEC" min="1" max="30" step="1"></div>
+    <div class="field"><label>CAPTURE_RECONNECT_SEC <span class="desc">attesa riconnessione</span></label><input type="number" name="CAPTURE_RECONNECT_SEC" min="1" max="60" step="1"></div>
     <div class="row-actions">
-      <button class="btn btn-mini" type="button" id="btn-db-test">
-        ↻ Testa connessione
-      </button>
-      <button class="btn btn-mini" type="button" id="btn-db-sql">
-        ▤ Mostra SQL
-      </button>
+      <button class="btn btn-mini" type="button" id="btn-stream-test">↻ Stato stream</button>
+      <span id="stream-msg" style="color:var(--dim); font-size:.7rem; align-self:center"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>MQTT output <span class="restart-tag">richiede restart</span></h3>
+    <div class="help"><p>Opzionale: pubblica i contatori su MQTT (retained) su
+      <code>&lt;base&gt;/&lt;camera&gt;/enter|exit|occupancy</code>. Utile per Home Assistant.</p></div>
+    <div class="field"><label>Abilitato</label>
+      <select name="MQTT_ENABLED"><option value="false">no</option><option value="true">sì</option></select></div>
+    <div class="field"><label>MQTT_HOST</label><input class="text" type="text" name="MQTT_HOST" autocomplete="off"></div>
+    <div class="field"><label>MQTT_PORT</label><input type="number" name="MQTT_PORT" min="1" max="65535"></div>
+    <div class="field"><label>MQTT_USER <span class="desc">vuoto = no auth</span></label><input class="text" type="text" name="MQTT_USER" autocomplete="off"></div>
+    <div class="field"><label>MQTT_PASS</label><input type="password" name="MQTT_PASS" autocomplete="new-password" placeholder="•••"></div>
+    <div class="field"><label>MQTT_BASE_TOPIC</label><input class="text" type="text" name="MQTT_BASE_TOPIC"></div>
+  </div>
+
+  <div class="card">
+    <h3>PostgreSQL <span class="pg-badge" id="pg-status-badge">non connesso</span></h3>
+    <div class="help"><p>Storage esterno per lo storico. Vuoto = solo
+      <code>events.jsonl</code>. La tabella si crea da sola al primo connect se
+      l'utente ha permessi CREATE, oppure usa <strong>Mostra SQL</strong>.</p></div>
+    <div class="field"><label>DB_HOST</label><input class="text" type="text" name="DB_HOST" autocomplete="off"></div>
+    <div class="field"><label>DB_PORT</label><input type="number" name="DB_PORT" min="1" max="65535"></div>
+    <div class="field"><label>DB_NAME</label><input class="text" type="text" name="DB_NAME" autocomplete="off"></div>
+    <div class="field"><label>DB_USER</label><input class="text" type="text" name="DB_USER" autocomplete="off"></div>
+    <div class="field"><label>DB_PASS</label><input type="password" name="DB_PASS" autocomplete="new-password" placeholder="•••"></div>
+    <div class="field"><label>DB_SCHEMA</label><input class="text" type="text" name="DB_SCHEMA" autocomplete="off"></div>
+    <div class="field"><label>DB_TABLE</label><input class="text" type="text" name="DB_TABLE" autocomplete="off"></div>
+    <div class="field"><label>DB_SSLMODE</label>
+      <select name="DB_SSLMODE">
+        <option value="disable">disable</option><option value="allow">allow</option>
+        <option value="prefer">prefer</option><option value="require">require</option>
+        <option value="verify-ca">verify-ca</option><option value="verify-full">verify-full</option>
+      </select></div>
+    <div class="row-actions">
+      <button class="btn btn-mini" type="button" id="btn-db-test">↻ Testa connessione</button>
+      <button class="btn btn-mini" type="button" id="btn-db-sql">▤ Mostra SQL</button>
     </div>
     <div id="db-feedback" class="feedback"></div>
   </div>
 
-  <!-- ---- WEBHOOK ---- -->
   <div class="card">
     <h3>Webhook</h3>
-    <div class="help">
-      <p>
-        Ad ogni <code>enter</code>/<code>exit</code> il counter fa una HTTP
-        POST al tuo URL con un JSON contenente evento, camera, timestamp,
-        occupancy, totali, coordinate. Compatibile con Home Assistant,
-        Node-RED, Slack, n8n, ecc.
-      </p>
-      <details style="margin-top:.4rem">
-        <summary>Esempio di payload</summary>
-        <pre style="margin:.5rem 0 0; padding:.5rem; background:var(--bg);
-                    border:1px solid var(--border); border-radius:2px;
-                    font-size:.65rem; color:var(--text2); overflow-x:auto">{
-  "event": "enter",
-  "camera": "ingresso",
-  "ts": 1716470000.123,
-  "datetime": "2026-05-23 18:42:13",
-  "occupancy": 4,
-  "enter_total": 1247,
-  "exit_total": 1243,
-  "method": "line_cross",
-  "event_id": "...",
-  "start": {"x": 0.45, "y": 0.10},
-  "end":   {"x": 0.43, "y": 0.88},
-  "reason": "..."
-}</pre>
-      </details>
-    </div>
-    <div class="field">
-      <label>Abilitato</label>
-      <select name="WEBHOOK_ENABLED">
-        <option value="false">no</option>
-        <option value="true">sì</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>WEBHOOK_URL</label>
-      <input type="url" name="WEBHOOK_URL"
-             placeholder="https://example.com/hook">
-    </div>
-    <div class="field full">
-      <label>WEBHOOK_HEADERS
-        <span class="desc">JSON di header extra (Authorization, X-Token, ecc.)</span></label>
-    </div>
-    <textarea name="WEBHOOK_HEADERS" rows="3"
-              placeholder='{"Authorization": "Bearer xyz"}'></textarea>
-    <div class="field">
-      <label>WEBHOOK_TIMEOUT
-        <span class="desc">secondi</span></label>
-      <input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5">
-    </div>
-    <div class="field">
-      <label>WEBHOOK_RETRY
-        <span class="desc">retry per errori 5xx/network</span></label>
-      <input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1">
-    </div>
+    <div class="help"><p>POST JSON ad ogni enter/exit (evento, camera, timestamp,
+      occupancy, totali, coordinate). Per Home Assistant, Node-RED, n8n, Slack…</p></div>
+    <div class="field"><label>Abilitato</label>
+      <select name="WEBHOOK_ENABLED"><option value="false">no</option><option value="true">sì</option></select></div>
+    <div class="field"><label>WEBHOOK_URL</label><input class="text" type="url" name="WEBHOOK_URL" placeholder="https://example.com/hook"></div>
+    <div class="field full"><label>WEBHOOK_HEADERS <span class="desc">JSON header extra</span></label></div>
+    <textarea name="WEBHOOK_HEADERS" rows="2" placeholder='{"Authorization":"Bearer xyz"}'
+      style="width:100%; background:var(--panel2); color:var(--text);
+      border:1px solid var(--border); border-radius:3px; padding:.5rem .6rem;
+      font-family:inherit; font-size:.75rem; resize:vertical"></textarea>
+    <div class="field"><label>WEBHOOK_TIMEOUT <span class="desc">secondi</span></label><input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5"></div>
+    <div class="field"><label>WEBHOOK_RETRY</label><input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1"></div>
     <div class="row-actions">
-      <button class="btn btn-mini" type="button" id="btn-webhook-test">
-        ↻ Invia evento di test
-      </button>
+      <button class="btn btn-mini" type="button" id="btn-webhook-test">↻ Invia evento di test</button>
     </div>
     <div id="webhook-feedback" class="feedback"></div>
   </div>
-
 </section>
 
-
-<!-- =================================================================
-     TAB 4: SISTEMA — stato + reset
-     ================================================================= -->
+<!-- ============ TAB SISTEMA ============ -->
 <section class="tab-panel" data-panel="system">
-
-  <div class="section-title">
-    <h2>Stato</h2>
-  </div>
+  <div class="section-title"><h2>Stato</h2></div>
   <div class="status-grid">
-    <div class="stat">
-      <div class="lbl">Entrate cumulative</div>
-      <div class="val">{{ snapshot.enter }}</div>
-    </div>
-    <div class="stat">
-      <div class="lbl">Uscite cumulative</div>
-      <div class="val">{{ snapshot.exit }}</div>
-    </div>
-    <div class="stat">
-      <div class="lbl">Presenti ora</div>
-      <div class="val">{{ snapshot.occupancy }}</div>
-    </div>
-    <div class="stat">
-      <div class="lbl">Eventi storici</div>
-      <div class="val">{{ stats.events_count or 0 }}</div>
-      <div class="sub">in {{ stats.days_count or 0 }} giorni distinti</div>
-    </div>
-    <div class="stat">
-      <div class="lbl">Storage</div>
-      <div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
-      {% if stats.jsonl_size %}
-        <div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size / 1024) }} KB</div>
-      {% endif %}
-    </div>
-    <div class="stat">
-      <div class="lbl">Ultimo evento</div>
-      <div class="val dim">
-        {% if stats.last_event %}
-          {{ stats.last_event[:19].replace('T', ' ') }}
-        {% else %}—{% endif %}
-      </div>
-    </div>
+    <div class="stat"><div class="lbl">Entrate cumulative</div><div class="val">{{ snapshot.enter }}</div></div>
+    <div class="stat"><div class="lbl">Uscite cumulative</div><div class="val">{{ snapshot.exit }}</div></div>
+    <div class="stat"><div class="lbl">Presenti ora</div><div class="val">{{ snapshot.occupancy }}</div></div>
+    <div class="stat"><div class="lbl">Stream</div><div class="val dim" id="sys-stream">—</div><div class="sub" id="sys-stream-sub"></div></div>
+    <div class="stat"><div class="lbl">Detection</div><div class="val dim" id="sys-detect">—</div><div class="sub" id="sys-detect-sub"></div></div>
+    <div class="stat"><div class="lbl">Storage</div><div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
+      {% if stats.jsonl_size %}<div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size/1024) }} KB</div>{% endif %}</div>
+    <div class="stat"><div class="lbl">Eventi storici</div><div class="val">{{ stats.events_count or 0 }}</div><div class="sub">in {{ stats.days_count or 0 }} giorni</div></div>
+    <div class="stat"><div class="lbl">Ultimo evento</div><div class="val dim">{% if stats.last_event %}{{ stats.last_event[:19].replace('T',' ') }}{% else %}—{% endif %}</div></div>
   </div>
 
-  <div class="section-title">
-    <h2>Reset</h2>
-  </div>
-
+  <div class="section-title"><h2>Reset</h2></div>
   <div class="action safe">
-    <div class="desc">
-      <h4>Reset cumulativi</h4>
-      <p>
-        Azzera <code>entrate</code>, <code>uscite</code> e
-        <code>presenti</code>. <strong>Lo storico degli eventi resta
-        intatto</strong>.
-      </p>
-      <small>Utile se hai appena montato la camera e vuoi partire da zero.</small>
-    </div>
-    <div class="ctrl">
-      <button class="btn" type="button" id="btn-reset-counters">
-        Azzera contatori
-      </button>
-    </div>
+    <div class="desc"><h4>Reset cumulativi</h4>
+      <p>Azzera <code>entrate</code>/<code>uscite</code>/<code>presenti</code>.
+      <strong>Lo storico resta intatto.</strong></p>
+      <small>Per ripartire da zero dopo la taratura.</small></div>
+    <div class="ctrl"><button class="btn" type="button" id="btn-reset-counters">Azzera contatori</button></div>
   </div>
-
   <div class="action warn">
-    <div class="desc">
-      <h4>Reset statistiche di un giorno</h4>
-      <p>
-        Cancella tutti gli eventi di un singolo giorno (sia da Postgres sia
-        dal file JSON). I cumulativi vengono corretti sottraendo gli
-        enter/exit del giorno cancellato.
-      </p>
-      <small>Per rimuovere falsi positivi accumulati in una giornata.</small>
-    </div>
+    <div class="desc"><h4>Reset di un giorno</h4>
+      <p>Cancella gli eventi di un giorno (JSON + Postgres) e corregge i cumulativi.</p>
+      <small>Per togliere falsi positivi di una giornata.</small></div>
     <div class="ctrl">
-      <input type="date" id="reset-day-input"
-             value="{{ today_iso }}" max="{{ today_iso }}">
-      <button class="btn warn" type="button" id="btn-reset-day">
-        Cancella giorno
-      </button>
+      <input type="date" id="reset-day-input" value="{{ today_iso }}" max="{{ today_iso }}">
+      <button class="btn warn" type="button" id="btn-reset-day">Cancella giorno</button>
     </div>
   </div>
-
   <div class="action danger">
-    <div class="desc">
-      <h4>Reset totale (wipe)</h4>
-      <p>
-        <strong>Cancella TUTTO lo storico</strong> + azzera i contatori.
-        Eventi rimossi sia dal JSON sia da Postgres. <strong>Irreversibile.</strong>
-      </p>
-      <small>Da usare solo se hai esportato i dati o stai ripartendo da zero.</small>
-    </div>
-    <div class="ctrl">
-      <button class="btn danger" type="button" id="btn-reset-all">
-        Wipe totale
-      </button>
-    </div>
+    <div class="desc"><h4>Reset totale (wipe)</h4>
+      <p><strong>Cancella TUTTO</strong> lo storico + azzera i contatori. Irreversibile.</p>
+      <small>Solo dopo aver esportato i dati.</small></div>
+    <div class="ctrl"><button class="btn danger" type="button" id="btn-reset-all">Wipe totale</button></div>
   </div>
-
-  <div id="reset-feedback" class="feedback"
-       style="font-size:.8rem; padding:1rem 1.25rem;
-              background:var(--panel2); border:1px solid var(--border-st);
-              border-left:3px solid var(--accent); border-radius:3px;
-              margin-top:1.5rem"></div>
-
+  <div id="reset-feedback" class="feedback" style="font-size:.8rem; padding:1rem 1.25rem;
+    background:var(--panel2); border:1px solid var(--border-st);
+    border-left:3px solid var(--accent); border-radius:3px; margin-top:1.5rem"></div>
 </section>
 
-
-<!-- ============ SAVE BAR (sticky, visibile in tutti i tab) ============ -->
 <div class="save-bar">
   <span class="save-feedback" id="feedback"></span>
   <button class="btn" type="button" id="btn-cancel">Annulla modifiche</button>
   <button class="btn primary" type="button" id="btn-save">Salva tutto</button>
 </div>
-
 </form>
 
 <script>
-  // ============================================================
-  //  TAB SWITCHING
-  // ============================================================
-  const TAB_KEY = 'counter-settings-tab';
-  function activateTab(name) {
-    document.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === name);
-    });
-    document.querySelectorAll('.tab-panel').forEach(p => {
-      p.classList.toggle('active', p.dataset.panel === name);
-    });
-    try { localStorage.setItem(TAB_KEY, name); } catch (_) {}
-    // ridimensiona canvas quando torno su camera
-    if (name === 'camera') resizeCanvas();
+  // ======= TAB =======
+  const TAB_KEY='counter-settings-tab';
+  function activateTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));
+    try{localStorage.setItem(TAB_KEY,name)}catch(e){}
+    if(name==='camera') resizeCanvas();
   }
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => activateTab(t.dataset.tab));
-  });
-  try {
-    const saved = localStorage.getItem(TAB_KEY);
-    if (saved) activateTab(saved);
-  } catch (_) {}
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.tab)));
+  try{const s=localStorage.getItem(TAB_KEY); if(s) activateTab(s)}catch(e){}
 
-  // ============================================================
-  //  STATO CONDIVISO
-  // ============================================================
-  const initial = {{ current|tojson }};
-  let s = Object.assign({}, initial);
-  const REFRESH_SEC = {{ snapshot_refresh }};
-  const FRIGATE_OK = {{ 'true' if frigate_url_set else 'false' }};
-  const form = document.getElementById('settings-form');
+  // ======= STATO =======
+  const initial={{ current|tojson }};
+  let s=Object.assign({},initial);
+  const REFRESH_SEC={{ snapshot_refresh }};
+  const RTSP_OK={{ 'true' if rtsp_configured else 'false' }};
+  const form=document.getElementById('settings-form');
 
-  function setFormFromState() {
-    for (const k of Object.keys(s)) {
-      const el = form.elements[k];
-      if (el) {
-        // password: lascia placeholder se mascherato
-        if (el.type === 'password' && s[k] === '***') {
-          el.value = '';
-        } else {
-          el.value = s[k];
-        }
-        const numEl = form.elements[k + '_num'];
-        if (numEl) numEl.value = s[k];
+  function setForm(){
+    for(const k of Object.keys(s)){
+      const el=form.elements[k];
+      if(el){
+        if(el.type==='password' && s[k]==='***') el.value='';
+        else if(typeof s[k]==='boolean') el.value = s[k] ? 'true':'false';
+        else el.value=s[k];
+        const num=form.elements[k+'_num']; if(num) num.value=s[k];
       }
     }
     drawOverlay();
   }
-
-  function readFormToState() {
-    for (const k of Object.keys(s)) {
-      const el = form.elements[k];
-      if (!el) continue;
-      let v = el.value;
-      // password vuota = "***" (non cambiare)
-      if (el.type === 'password' && v === '') v = '***';
-      if (v === null || v === undefined) continue;
-      if (typeof initial[k] === 'number') {
-        const f = parseFloat(v);
-        if (!isNaN(f)) s[k] = f;
-      } else if (typeof initial[k] === 'boolean') {
-        s[k] = (v === 'true' || v === true);
-      } else {
-        s[k] = v;
-      }
+  function readForm(){
+    for(const k of Object.keys(s)){
+      const el=form.elements[k]; if(!el) continue;
+      let v=el.value;
+      if(el.type==='password' && v==='') v='***';
+      if(v===null||v===undefined) continue;
+      if(typeof initial[k]==='number'){ const f=parseFloat(v); if(!isNaN(f)) s[k]=f; }
+      else if(typeof initial[k]==='boolean'){ s[k]=(v==='true'); }
+      else s[k]=v;
     }
   }
-
-  form.addEventListener('input', (e) => {
-    const t = e.target;
-    if (!t.name) return;
-    if (t.name.endsWith('_num')) {
-      const base = t.name.slice(0, -4);
-      const baseEl = form.elements[base];
-      if (baseEl) baseEl.value = t.value;
-    } else {
-      const numEl = form.elements[t.name + '_num'];
-      if (numEl) numEl.value = t.value;
-    }
-    readFormToState();
-    drawOverlay();
+  form.addEventListener('input',e=>{
+    const t=e.target; if(!t.name) return;
+    if(t.name.endsWith('_num')){ const b=form.elements[t.name.slice(0,-4)]; if(b) b.value=t.value; }
+    else { const n=form.elements[t.name+'_num']; if(n) n.value=t.value; }
+    readForm(); drawOverlay();
   });
 
-  // ============================================================
-  //  CANVAS OVERLAY
-  // ============================================================
-  const wrap   = document.getElementById('canvas-wrap');
-  const canvas = document.getElementById('overlay');
-  const ctx    = canvas.getContext('2d');
-
-  function resizeCanvas() {
-    if (!wrap.offsetParent) return;   // tab non visibile
-    const rect = wrap.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width  = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    canvas.style.width  = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawOverlay();
+  // ======= CANVAS overlay (linea+ROI trascinabili) =======
+  const wrap=document.getElementById('canvas-wrap');
+  const canvas=document.getElementById('overlay'); const ctx=canvas.getContext('2d');
+  function resizeCanvas(){
+    if(!wrap.offsetParent) return;
+    const r=wrap.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+    canvas.width=r.width*dpr; canvas.height=r.height*dpr;
+    canvas.style.width=r.width+'px'; canvas.style.height=r.height+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0); drawOverlay();
   }
-  window.addEventListener('resize', resizeCanvas);
-
-  function drawOverlay() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (!w || !h) return;
-    ctx.clearRect(0, 0, w, h);
-
-    const lineY = s.LINE_Y * h;
-    const mTop = (s.LINE_Y - s.LINE_MARGIN) * h;
-    const mBot = (s.LINE_Y + s.LINE_MARGIN) * h;
-    ctx.fillStyle = 'rgba(255,235,59,.10)';
-    ctx.fillRect(0, mTop, w, mBot - mTop);
-
-    const x1 = s.MOTION_X1 * w, y1 = s.MOTION_Y1 * h;
-    const x2 = s.MOTION_X2 * w, y2 = s.MOTION_Y2 * h;
-    ctx.fillStyle = 'rgba(79,195,247,.06)';
-    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(w, lineY); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,235,59,.6)'; ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(0, mTop); ctx.lineTo(w, mTop); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, mBot); ctx.lineTo(w, mBot); ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = '#4fc3f7';
-    [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y]) => {
-      ctx.fillRect(x-5, y-5, 10, 10);
-    });
-    ctx.fillStyle = '#ffeb3b';
-    ctx.fillRect(w/2 - 25, lineY - 4, 50, 8);
-
-    ctx.fillStyle = '#ffeb3b';
-    ctx.font = '11px "Roboto Mono", monospace';
-    ctx.fillText('LINE Y=' + s.LINE_Y.toFixed(2), 8, lineY - 6);
-    ctx.fillStyle = '#4fc3f7';
-    ctx.fillText('ROI', x1 + 5, y1 + 14);
+  window.addEventListener('resize',resizeCanvas);
+  function drawOverlay(){
+    const w=canvas.clientWidth,h=canvas.clientHeight; if(!w||!h) return;
+    ctx.clearRect(0,0,w,h);
+    const lineY=s.LINE_Y*h, mt=(s.LINE_Y-s.LINE_MARGIN)*h, mb=(s.LINE_Y+s.LINE_MARGIN)*h;
+    ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(0,mt,w,mb-mt);
+    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h;
+    ctx.fillStyle='rgba(79,195,247,.06)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
+    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
+    ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(0,lineY); ctx.lineTo(w,lineY); ctx.stroke();
+    ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(0,mt); ctx.lineTo(w,mt); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,mb); ctx.lineTo(w,mb); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#4fc3f7'; [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y])=>ctx.fillRect(x-5,y-5,10,10));
+    ctx.fillStyle='#ffeb3b'; ctx.fillRect(w/2-25,lineY-4,50,8);
+    ctx.font='11px "Roboto Mono",monospace'; ctx.fillStyle='#ffeb3b';
+    ctx.fillText('LINE '+s.LINE_Y.toFixed(2),8,lineY-6);
   }
-
-  let drag = null;
-  function pickHandle(px, py) {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    const x1 = s.MOTION_X1*w, y1 = s.MOTION_Y1*h;
-    const x2 = s.MOTION_X2*w, y2 = s.MOTION_Y2*h;
-    const lineY = s.LINE_Y*h;
-    const H = 10;
-    if (Math.abs(py - lineY) <= 6 && px > w/2 - 30 && px < w/2 + 30)
-      return 'line-handle';
-    if (Math.abs(py - lineY) <= 4) return 'line';
-    if (Math.abs(px-x1)<H && Math.abs(py-y1)<H) return 'roi-tl';
-    if (Math.abs(px-x2)<H && Math.abs(py-y1)<H) return 'roi-tr';
-    if (Math.abs(px-x1)<H && Math.abs(py-y2)<H) return 'roi-bl';
-    if (Math.abs(px-x2)<H && Math.abs(py-y2)<H) return 'roi-br';
-    if (Math.abs(px-x1)<H && py>y1 && py<y2) return 'roi-l';
-    if (Math.abs(px-x2)<H && py>y1 && py<y2) return 'roi-r';
-    if (Math.abs(py-y1)<H && px>x1 && px<x2) return 'roi-t';
-    if (Math.abs(py-y2)<H && px>x1 && px<x2) return 'roi-b';
+  let drag=null;
+  function pick(px,py){
+    const w=canvas.clientWidth,h=canvas.clientHeight;
+    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h,ly=s.LINE_Y*h,H=10;
+    if(Math.abs(py-ly)<=6 && px>w/2-30 && px<w/2+30) return 'line';
+    if(Math.abs(py-ly)<=4) return 'line';
+    if(Math.abs(px-x1)<H&&Math.abs(py-y1)<H) return 'tl';
+    if(Math.abs(px-x2)<H&&Math.abs(py-y1)<H) return 'tr';
+    if(Math.abs(px-x1)<H&&Math.abs(py-y2)<H) return 'bl';
+    if(Math.abs(px-x2)<H&&Math.abs(py-y2)<H) return 'br';
+    if(Math.abs(px-x1)<H&&py>y1&&py<y2) return 'l';
+    if(Math.abs(px-x2)<H&&py>y1&&py<y2) return 'r';
+    if(Math.abs(py-y1)<H&&px>x1&&px<x2) return 't';
+    if(Math.abs(py-y2)<H&&px>x1&&px<x2) return 'b';
     return null;
   }
-  function cursorFor(h){
-    if (!h) return 'crosshair';
-    if (h.startsWith('line')) return 'ns-resize';
-    if (h === 'roi-tl' || h === 'roi-br') return 'nwse-resize';
-    if (h === 'roi-tr' || h === 'roi-bl') return 'nesw-resize';
-    if (h === 'roi-l' || h === 'roi-r') return 'ew-resize';
-    if (h === 'roi-t' || h === 'roi-b') return 'ns-resize';
-    return 'crosshair';
+  function pos(e){const r=canvas.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];}
+  const cl=v=>Math.max(0,Math.min(1,v));
+  canvas.addEventListener('mousedown',e=>{const[px,py]=pos(e); drag=pick(px,py);});
+  canvas.addEventListener('mousemove',e=>{
+    const[px,py]=pos(e);
+    if(!drag){const hh=pick(px,py); canvas.style.cursor=hh?(hh==='line'?'ns-resize':'pointer'):'crosshair'; return;}
+    const w=canvas.clientWidth,h=canvas.clientHeight,nx=cl(px/w),ny=cl(py/h);
+    if(drag==='line') s.LINE_Y=ny;
+    else{
+      if(drag.includes('l')) s.MOTION_X1=Math.min(nx,s.MOTION_X2-0.05);
+      if(drag.includes('r')) s.MOTION_X2=Math.max(nx,s.MOTION_X1+0.05);
+      if(drag.includes('t')) s.MOTION_Y1=Math.min(ny,s.MOTION_Y2-0.05);
+      if(drag.includes('b')) s.MOTION_Y2=Math.max(ny,s.MOTION_Y1+0.05);
+    }
+    setForm();
+  });
+  window.addEventListener('mouseup',()=>drag=null);
+
+  // ======= SNAPSHOT =======
+  const img=document.getElementById('snap'), refreshMeta=document.getElementById('refresh-meta');
+  const autoCb=document.getElementById('auto-refresh'); let snapTimer=null;
+  const errBox=document.getElementById('snap-error'), errMsg=document.getElementById('snap-error-msg'),
+        errHint=document.getElementById('snap-error-hint'), errPre=document.getElementById('snap-error-pre');
+  function showErr(p,fb){
+    errBox.style.display='block';
+    if(p&&typeof p==='object'){ errMsg.textContent='✗ '+(p.error||'errore'); errHint.textContent=p.hint||'';
+      errPre.style.display='block'; errPre.textContent=JSON.stringify(p,null,2); }
+    else{ errMsg.textContent='✗ '+(fb||'errore'); errHint.textContent=''; errPre.style.display='none'; }
   }
-  function evtPos(e){
-    const r = canvas.getBoundingClientRect();
-    return [e.clientX - r.left, e.clientY - r.top];
+  async function loadSnap(){
+    if(!RTSP_OK) return;
+    try{
+      const r=await fetch('/api/snapshot?_='+Date.now());
+      if(!r.ok){ let p=null; try{p=await r.json()}catch(e){} p?showErr(p):showErr(null,'HTTP '+r.status);
+        refreshMeta.textContent='✗ '+r.status; return; }
+      const blob=await r.blob(), old=img.src; img.src=URL.createObjectURL(blob);
+      if(old.startsWith('blob:')) URL.revokeObjectURL(old);
+      refreshMeta.textContent='ok '+new Date().toLocaleTimeString(); errBox.style.display='none';
+    }catch(e){ showErr(null,e.message); }
   }
-  function clamp(v){return Math.max(0, Math.min(1, v))}
+  img.addEventListener('load',resizeCanvas);
+  function startAuto(){ if(snapTimer) clearInterval(snapTimer);
+    if(autoCb.checked&&RTSP_OK) snapTimer=setInterval(loadSnap,REFRESH_SEC*1000); }
+  autoCb.addEventListener('change',startAuto);
+  document.getElementById('btn-refresh').addEventListener('click',loadSnap);
 
-  canvas.addEventListener('mousedown', (e) => {
-    const [px,py] = evtPos(e);
-    const h = pickHandle(px,py);
-    if (h) drag = h;
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    const [px,py] = evtPos(e);
-    if (!drag) {
-      canvas.style.cursor = cursorFor(pickHandle(px,py));
-      return;
-    }
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    const nx = clamp(px/w), ny = clamp(py/h);
-    if (drag.startsWith('line')) {
-      s.LINE_Y = ny;
-    } else {
-      if (drag.includes('l')) s.MOTION_X1 = Math.min(nx, s.MOTION_X2 - 0.05);
-      if (drag.includes('r')) s.MOTION_X2 = Math.max(nx, s.MOTION_X1 + 0.05);
-      if (drag.includes('t')) s.MOTION_Y1 = Math.min(ny, s.MOTION_Y2 - 0.05);
-      if (drag.includes('b')) s.MOTION_Y2 = Math.max(ny, s.MOTION_Y1 + 0.05);
-    }
-    setFormFromState();
-  });
-  window.addEventListener('mouseup', () => drag = null);
-
-  // ============================================================
-  //  SNAPSHOT
-  // ============================================================
-  const img = document.getElementById('snap');
-  const refreshMeta = document.getElementById('refresh-meta');
-  const autoCb = document.getElementById('auto-refresh');
-  let snapTimer = null;
-
-  const errBox  = document.getElementById('snap-error');
-  const errMsg  = document.getElementById('snap-error-msg');
-  const errHint = document.getElementById('snap-error-hint');
-  const errPre  = document.getElementById('snap-error-pre');
-
-  function showSnapError(payload, fallbackText) {
-    errBox.style.display = 'block';
-    if (payload && typeof payload === 'object') {
-      errMsg.textContent  = '✗ ' + (payload.error || 'errore sconosciuto');
-      errHint.textContent = payload.hint || '';
-      errPre.textContent  = JSON.stringify(payload, null, 2);
-    } else {
-      errMsg.textContent  = '✗ ' + (fallbackText || 'errore');
-      errHint.textContent = '';
-      errPre.textContent  = fallbackText || '';
-    }
+  async function loadHealth(){
+    try{
+      const r=await fetch('/api/health'); const d=await r.json();
+      document.getElementById('sys-stream').textContent=d.opened?'CONNESSO':'OFFLINE';
+      document.getElementById('sys-stream-sub').textContent=
+        (d.fps?d.fps+' fps cam':'')+(d.reconnects?' · '+d.reconnects+' reconn':'');
+      document.getElementById('sys-detect').textContent=
+        (d.model_loaded?(d.detect_ms+' ms'):'no modello');
+      document.getElementById('sys-detect-sub').textContent=
+        (d.proc_fps?d.proc_fps+' fps proc':'')+(d.detections!=null?' · '+d.detections+' pers':'');
+    }catch(e){}
   }
-  function clearSnapError() { errBox.style.display = 'none'; }
+  document.getElementById('btn-diag').addEventListener('click',async()=>{
+    refreshMeta.textContent='controllo…';
+    try{ const r=await fetch('/api/snapshot/diag'); const d=await r.json();
+      showErr({error:d.ok?'stream OK':'stream non pronto',hint:d.hint,stats:d.stats}); refreshMeta.textContent='';
+    }catch(e){ showErr(null,e.message); }
+  });
+  document.getElementById('btn-stream-test').addEventListener('click',async()=>{
+    const m=document.getElementById('stream-msg'); m.textContent='controllo…';
+    try{ const r=await fetch('/api/snapshot/diag'); const d=await r.json();
+      m.textContent=(d.ok?'✓ ':'✗ ')+(d.hint||(d.stats.opened?'stream connesso':'stream offline'));
+    }catch(e){ m.textContent='✗ '+e.message; }
+  });
 
-  async function loadSnapshot() {
-    if (!FRIGATE_OK) return;
-    try {
-      const r = await fetch('/api/snapshot?_=' + Date.now());
-      const ct = r.headers.get('Content-Type') || '';
-      if (!r.ok) {
-        let payload = null;
-        if (ct.includes('json')) {
-          try { payload = await r.json(); } catch (_) {}
-        }
-        if (payload) showSnapError(payload);
-        else showSnapError(null, 'HTTP ' + r.status);
-        refreshMeta.textContent = '✗ HTTP ' + r.status;
-        return;
-      }
-      const blob = await r.blob();
-      const old = img.src;
-      img.src = URL.createObjectURL(blob);
-      if (old.startsWith('blob:')) URL.revokeObjectURL(old);
-      refreshMeta.textContent = 'aggiornato ' + new Date().toLocaleTimeString();
-      clearSnapError();
-    } catch (e) {
-      showSnapError(null, e.message);
-      refreshMeta.textContent = '✗ ' + e.message;
-    }
+  // ======= POSTGRES =======
+  const dbFb=document.getElementById('db-feedback'), pgBadge=document.getElementById('pg-status-badge');
+  function pgBadgeSet(ok){ pgBadge.textContent=ok?'connesso':'non connesso'; pgBadge.className='pg-badge '+(ok?'ok':'err'); }
+  document.getElementById('btn-db-test').addEventListener('click',async()=>{
+    readForm(); dbFb.innerHTML='<span style="color:var(--muted)">test…</span>';
+    try{
+      const body={DB_HOST:s.DB_HOST,DB_PORT:s.DB_PORT,DB_NAME:s.DB_NAME,DB_USER:s.DB_USER,
+        DB_PASS:form.elements['DB_PASS'].value||'***',DB_SCHEMA:s.DB_SCHEMA,DB_TABLE:s.DB_TABLE,DB_SSLMODE:s.DB_SSLMODE};
+      const r=await fetch('/api/db/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d=await r.json();
+      if(d.ok){ const tbl=d.table_exists?`<span class="ok">tabella ${d.table_full} presente</span>`
+        :`<span style="color:var(--warn)">tabella ${d.table_full} assente — creata al primo connect</span>`;
+        dbFb.innerHTML=`<span class="ok">✓ ${d.version}</span><br>${tbl}`; }
+      else dbFb.innerHTML=`<span class="err">✗ ${d.error}</span>`;
+    }catch(e){ dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
+  });
+  document.getElementById('btn-db-sql').addEventListener('click',async()=>{
+    try{ const r=await fetch('/api/db/sql'); const d=await r.json();
+      const esc=d.sql.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      dbFb.innerHTML=`<div style="margin-bottom:.4rem;color:var(--muted)">Esegui come utente con CREATE
+        <button id="sqlcopy" class="btn btn-mini" style="margin-left:.4rem">copia</button></div><pre class="out">${esc}</pre>`;
+      document.getElementById('sqlcopy').onclick=async()=>{try{await navigator.clipboard.writeText(d.sql);
+        document.getElementById('sqlcopy').textContent='copiato ✓'}catch(e){}};
+    }catch(e){ dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
+  });
+
+  // ======= WEBHOOK =======
+  const whFb=document.getElementById('webhook-feedback');
+  document.getElementById('btn-webhook-test').addEventListener('click',async()=>{
+    readForm(); whFb.innerHTML='<span style="color:var(--muted)">salvataggio e test…</span>';
+    try{
+      await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
+      const r=await fetch('/api/webhook/test',{method:'POST'}); const d=await r.json();
+      if(d.ok) whFb.innerHTML=`<span class="ok">✓ ${d.status} da ${d.url}</span>`+
+        (d.body_preview?`<pre class="out">${d.body_preview.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</pre>`:'');
+      else whFb.innerHTML=`<span class="err">✗ ${d.error||'HTTP '+d.status}</span>`;
+    }catch(e){ whFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
+  });
+
+  // ======= SAVE / CANCEL =======
+  const fb=document.getElementById('feedback');
+  document.getElementById('btn-cancel').addEventListener('click',()=>{ s=Object.assign({},initial); setForm(); fb.innerHTML='modifiche annullate'; });
+  document.getElementById('btn-save').addEventListener('click',async()=>{
+    readForm(); fb.innerHTML='<span>salvataggio…</span>';
+    try{
+      const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
+      const d=await r.json();
+      if(r.ok&&d.ok){
+        let m=`<span class="ok">✓ salvato (${d.changed.length})</span>`;
+        if(d.postgres_reconnect) m+=d.postgres_reconnect.ok?' · <span class="ok">Postgres OK</span>':` · <span class="err">Postgres: ${d.postgres_reconnect.message}</span>`;
+        if(d.restart_needed) m+=' · <span class="warn">⚠ alcuni parametri richiedono restart del container</span>';
+        fb.innerHTML=m; Object.assign(s,d.current); Object.assign(initial,d.current); setForm();
+        pgBadgeSet(d.postgres_reconnect?d.postgres_reconnect.ok:{{ 'true' if postgres_enabled else 'false' }});
+      } else fb.innerHTML=`<span class="err">✗ ${d.error||'errore'}</span>`;
+    }catch(e){ fb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
+  });
+
+  // ======= RESET =======
+  const rfb=document.getElementById('reset-feedback');
+  async function doReset(url,body,confirmMsg,label){
+    if(confirmMsg&&!confirm(confirmMsg)) return;
+    rfb.innerHTML='<span>esecuzione…</span>';
+    try{ const o={method:'POST'}; if(body){o.headers={'Content-Type':'application/x-www-form-urlencoded'};o.body=body;}
+      const r=await fetch(url,o); const d=await r.json();
+      if(!r.ok||!d.ok){ rfb.innerHTML=`<span class="err">✗ ${d.error||('HTTP '+r.status)}</span>`; return; }
+      let m=`✓ ${label}`;
+      if(d.action==='reset-day') m+=` (${d.day}: -${d.deleted_enter} enter, -${d.deleted_exit} exit)`;
+      else if(d.action==='reset-all') m+=` (${d.deleted_pg_rows} righe DB)`;
+      m+=` · enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
+      rfb.innerHTML=`<span class="ok">${m}</span>`; setTimeout(()=>location.reload(),1500);
+    }catch(e){ rfb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
   }
-  img.addEventListener('load', resizeCanvas);
-
-  function startAuto() {
-    if (snapTimer) clearInterval(snapTimer);
-    if (autoCb.checked && FRIGATE_OK) {
-      snapTimer = setInterval(loadSnapshot, REFRESH_SEC * 1000);
-    }
-  }
-  autoCb.addEventListener('change', startAuto);
-  document.getElementById('btn-refresh').addEventListener('click', loadSnapshot);
-
-  document.getElementById('btn-diag').addEventListener('click', async () => {
-    refreshMeta.textContent = 'diagnostica in corso…';
-    try {
-      const r = await fetch('/api/snapshot/diag');
-      const d = await r.json();
-      let msg = d.ok ? '✓ Frigate raggiungibile' : '✗ Diagnostica fallita';
-      let hint = '';
-      for (const st of (d.steps || [])) {
-        if (st.error) { msg = `✗ ${st.step}: ${st.error}`; break; }
-        if (st.cameras_found && st.cameras_found.length) {
-          if (!st.cameras_found.includes(d.configured_camera)) {
-            msg  = `✗ CAMERA="${d.configured_camera}" non esiste in Frigate`;
-            hint = 'Camere disponibili: ' + st.cameras_found.join(', ');
-            break;
-          }
-        }
-      }
-      showSnapError({error: msg, hint: hint, ...d});
-      refreshMeta.textContent = '';
-    } catch (e) {
-      showSnapError(null, 'diag: ' + e.message);
-    }
+  document.getElementById('btn-reset-counters').addEventListener('click',()=>doReset('/api/admin/reset-counters',null,'Azzerare i contatori? (storico resta)','contatori azzerati'));
+  document.getElementById('btn-reset-day').addEventListener('click',()=>{
+    const day=document.getElementById('reset-day-input').value; if(!day){alert('Seleziona un giorno');return;}
+    doReset('/api/admin/reset-day','day='+encodeURIComponent(day),`Cancellare gli eventi del ${day}?`,'giorno cancellato');
+  });
+  document.getElementById('btn-reset-all').addEventListener('click',()=>{
+    if(!confirm('⚠ Cancella TUTTO lo storico e azzera i contatori.')) return;
+    if(!confirm('Sei davvero sicuro? IRREVERSIBILE.')) return;
+    doReset('/api/admin/reset-all',null,null,'wipe completato');
   });
 
-  // ============================================================
-  //  CAMERA dropdown
-  // ============================================================
-  document.getElementById('btn-load-cameras').addEventListener('click',
-    async () => {
-      const msg = document.getElementById('cameras-msg');
-      msg.textContent = 'caricamento…';
-      try {
-        const r = await fetch('/api/frigate/cameras');
-        const d = await r.json();
-        if (!d.ok) { msg.textContent = '✗ ' + (d.error || 'errore'); return; }
-        const dl = document.getElementById('camera-list');
-        dl.innerHTML = '';
-        for (const c of d.cameras) {
-          const opt = document.createElement('option');
-          opt.value = c; dl.appendChild(opt);
-        }
-        msg.textContent = '✓ ' + d.cameras.length + ' camere disponibili';
-      } catch (e) {
-        msg.textContent = '✗ ' + e.message;
-      }
-    });
-
-  // ============================================================
-  //  POSTGRES test + show SQL
-  // ============================================================
-  const dbFb = document.getElementById('db-feedback');
-  const pgBadge = document.getElementById('pg-status-badge');
-
-  function updatePgBadge(state) {
-    if (state && state.ok) {
-      pgBadge.textContent = 'connesso';
-      pgBadge.className = 'pg-badge ok';
-    } else {
-      pgBadge.textContent = 'non connesso';
-      pgBadge.className = 'pg-badge err';
-    }
-  }
-
-  document.getElementById('btn-db-test').addEventListener('click', async () => {
-    readFormToState();
-    dbFb.innerHTML = '<span style="color:var(--muted)">test in corso…</span>';
-    try {
-      const body = {
-        DB_HOST:    s.DB_HOST,
-        DB_PORT:    s.DB_PORT,
-        DB_NAME:    s.DB_NAME,
-        DB_USER:    s.DB_USER,
-        DB_PASS:    form.elements['DB_PASS'].value || '***',
-        DB_SCHEMA:  s.DB_SCHEMA,
-        DB_TABLE:   s.DB_TABLE,
-        DB_SSLMODE: s.DB_SSLMODE,
-      };
-      const r = await fetch('/api/db/test', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body),
-      });
-      const d = await r.json();
-      if (d.ok) {
-        const tbl = d.table_exists
-          ? `<span class="ok">tabella ${d.table_full} presente</span>`
-          : `<span class="warn" style="color:var(--warn)">tabella ${d.table_full} assente — verrà creata al primo connect</span>`;
-        dbFb.innerHTML = `<span class="ok">✓ ${d.version}</span><br>${tbl}`;
-      } else {
-        dbFb.innerHTML = `<span class="err">✗ ${d.error}</span>`;
-      }
-    } catch (e) {
-      dbFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
-    }
-  });
-
-  document.getElementById('btn-db-sql').addEventListener('click', async () => {
-    try {
-      const r = await fetch('/api/db/sql');
-      const d = await r.json();
-      const esc = d.sql.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-      dbFb.innerHTML =
-        `<div style="margin-bottom:.4rem; color:var(--muted)">
-          Esegui questo SQL come utente con permessi CREATE
-          <button id="sql-copy" class="btn btn-mini" style="margin-left:.4rem">copia</button>
-        </div>
-        <pre class="sql-out">${esc}</pre>`;
-      document.getElementById('sql-copy').onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(d.sql);
-          document.getElementById('sql-copy').textContent = 'copiato ✓';
-        } catch (_) {}
-      };
-    } catch (e) {
-      dbFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
-    }
-  });
-
-  // ============================================================
-  //  WEBHOOK test
-  // ============================================================
-  const whFb = document.getElementById('webhook-feedback');
-  document.getElementById('btn-webhook-test').addEventListener('click',
-    async () => {
-      readFormToState();
-      whFb.innerHTML = '<span style="color:var(--muted)">salvataggio e test…</span>';
-      try {
-        await fetch('/api/settings', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(s),
-        });
-        const r = await fetch('/api/webhook/test', {method: 'POST'});
-        const d = await r.json();
-        if (d.ok) {
-          whFb.innerHTML = `<span class="ok">✓ ${d.status} da ${d.url}</span>` +
-            (d.body_preview
-              ? `<pre class="sql-out" style="margin-top:.4rem">${d.body_preview.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</pre>`
-              : '');
-        } else {
-          whFb.innerHTML = `<span class="err">✗ ${d.error || 'HTTP ' + d.status}</span>`;
-        }
-      } catch (e) {
-        whFb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
-      }
-    });
-
-  // ============================================================
-  //  SAVE / CANCEL
-  // ============================================================
-  const fb = document.getElementById('feedback');
-
-  document.getElementById('btn-cancel').addEventListener('click', () => {
-    s = Object.assign({}, initial);
-    setFormFromState();
-    fb.innerHTML = 'modifiche annullate';
-  });
-
-  document.getElementById('btn-save').addEventListener('click', async () => {
-    readFormToState();
-    fb.innerHTML = '<span>salvataggio…</span>';
-    try {
-      const r = await fetch('/api/settings', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(s),
-      });
-      const d = await r.json();
-      if (r.ok && d.ok) {
-        let msg = `<span class="ok">✓ salvato (${d.changed.length} parametri)</span>`;
-        if (d.postgres_reconnect) {
-          msg += d.postgres_reconnect.ok
-            ? ' · <span class="ok">Postgres riconnesso</span>'
-            : ` · <span class="err">Postgres NON connesso: ${d.postgres_reconnect.message}</span>`;
-        }
-        if (d.restart_needed) {
-          msg += ' · <span class="warn">⚠ alcuni parametri richiedono restart del container</span>';
-        }
-        fb.innerHTML = msg;
-        Object.assign(s, d.current);
-        Object.assign(initial, d.current);
-        setFormFromState();
-        updatePgBadge(d.postgres_reconnect || {ok: {{ 'true' if postgres_enabled else 'false' }}});
-      } else {
-        fb.innerHTML = `<span class="err">✗ ${d.error || 'errore'}</span>`;
-      }
-    } catch (e) {
-      fb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
-    }
-  });
-
-  // ============================================================
-  //  RESET ACTIONS
-  // ============================================================
-  const rfb = document.getElementById('reset-feedback');
-
-  async function doReset(url, body, confirmMsg, label) {
-    if (confirmMsg && !confirm(confirmMsg)) return;
-    rfb.innerHTML = '<span>esecuzione…</span>';
-    try {
-      const opts = { method: 'POST' };
-      if (body) {
-        opts.headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-        opts.body = body;
-      }
-      const r = await fetch(url, opts);
-      const d = await r.json();
-      if (!r.ok || !d.ok) {
-        rfb.innerHTML = `<span class="err">✗ ${d.error || ('HTTP ' + r.status)}</span>`;
-        return;
-      }
-      let msg = `✓ ${label}`;
-      if (d.action === 'reset-day') {
-        msg += ` (${d.day}: -${d.deleted_enter} enter, -${d.deleted_exit} exit)`;
-      } else if (d.action === 'reset-all') {
-        msg += ` (${d.deleted_pg_rows} righe DB rimosse)`;
-      }
-      msg += ` · cumulativi ora: enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
-      rfb.innerHTML = `<span class="ok">${msg}</span>`;
-      setTimeout(() => location.reload(), 1500);
-    } catch (e) {
-      rfb.innerHTML = `<span class="err">✗ ${e.message}</span>`;
-    }
-  }
-
-  document.getElementById('btn-reset-counters').addEventListener('click', () => {
-    doReset('/api/admin/reset-counters', null,
-            'Azzerare i contatori cumulativi? (lo storico resta)',
-            'contatori azzerati');
-  });
-  document.getElementById('btn-reset-day').addEventListener('click', () => {
-    const day = document.getElementById('reset-day-input').value;
-    if (!day) { alert('Seleziona un giorno'); return; }
-    doReset('/api/admin/reset-day', 'day=' + encodeURIComponent(day),
-            `Cancellare TUTTI gli eventi del ${day}? Operazione irreversibile.`,
-            'giorno cancellato');
-  });
-  document.getElementById('btn-reset-all').addEventListener('click', () => {
-    if (!confirm('⚠ ATTENZIONE: questo cancella TUTTO lo storico e azzera i contatori.')) return;
-    if (!confirm('Sei davvero sicuro? Operazione IRREVERSIBILE.')) return;
-    doReset('/api/admin/reset-all', null, null, 'wipe completato');
-  });
-
-  // ============================================================
-  //  BOOT
-  // ============================================================
-  setFormFromState();
-  resizeCanvas();
-  updatePgBadge({ok: {{ 'true' if postgres_enabled else 'false' }}});
-  if (FRIGATE_OK) { loadSnapshot(); startAuto(); }
+  // ======= BOOT =======
+  setForm(); resizeCanvas(); pgBadgeSet({{ 'true' if postgres_enabled else 'false' }});
+  if(RTSP_OK){ loadSnap(); startAuto(); }
+  loadHealth(); setInterval(loadHealth, 3000);
 </script>
-
 </body>
 </html>
