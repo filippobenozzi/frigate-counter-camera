@@ -57,7 +57,8 @@ class YoloDetector:
             providers=["CPUExecutionProvider"],
         )
         self.input_name = self.session.get_inputs()[0].name
-        self.size = Config.DETECT_INPUT_SIZE
+        # YOLO richiede lato multiplo di 32
+        self.size = max(160, (int(Config.DETECT_INPUT_SIZE) // 32) * 32)
         self.last_ms = 0.0
         print(f"[detector] modello caricato: {Config.MODEL_PATH} "
               f"input={self.size} threads={threads}", flush=True)

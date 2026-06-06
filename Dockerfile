@@ -26,12 +26,13 @@ WORKDIR /export
 #  - più accuratezza COCO: --build-arg YOLO_MODEL=yolov8s.pt
 ARG YOLO_MODEL=yolov8n.pt
 ARG MODEL_URL=""
+# dynamic=True => input ridimensionabile (DETECT_INPUT_SIZE 416/480/640...)
 RUN if [ -n "$MODEL_URL" ]; then \
         echo "Scarico modello custom: $MODEL_URL" && \
         python -c "import urllib.request; urllib.request.urlretrieve('${MODEL_URL}', 'custom.pt')" && \
-        python -c "from ultralytics import YOLO; YOLO('custom.pt').export(format='onnx', opset=12, imgsz=640, simplify=False)"; \
+        python -c "from ultralytics import YOLO; YOLO('custom.pt').export(format='onnx', opset=12, imgsz=640, simplify=False, dynamic=True)"; \
     else \
-        python -c "from ultralytics import YOLO; YOLO('${YOLO_MODEL}').export(format='onnx', opset=12, imgsz=640, simplify=False)"; \
+        python -c "from ultralytics import YOLO; YOLO('${YOLO_MODEL}').export(format='onnx', opset=12, imgsz=640, simplify=False, dynamic=True)"; \
     fi \
  && python -c "import glob, shutil; shutil.move(sorted(glob.glob('*.onnx'))[0], 'model.onnx')"
 
