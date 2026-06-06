@@ -263,8 +263,13 @@
             <input class="text" type="text" name="CAMERA" autocomplete="off">
           </div>
           <div class="field">
-            <label>Direzione ingresso <span class="desc">up = entra dal basso</span></label>
-            <select name="ENTER_DIRECTION"><option value="up">up</option><option value="down">down</option></select>
+            <label>Direzione ingresso <span class="desc">verso in cui si muove chi ENTRA</span></label>
+            <select name="ENTER_DIRECTION">
+              <option value="up">su ↑</option>
+              <option value="down">giù ↓</option>
+              <option value="left">sinistra ←</option>
+              <option value="right">destra →</option>
+            </select>
           </div>
           <div class="field">
             <label>Punto di tracking <span class="desc">bottom = piedi · center = box</span></label>
@@ -276,9 +281,21 @@
           <h3>Linea di attraversamento</h3>
           <div class="help line"><p>La <strong>linea gialla</strong> è la soglia
             da attraversare. La banda (margine) è la "zona morta": chi non la
-            supera da un lato all'altro non conta. Elimina chi staziona davanti.</p></div>
+            supera da un lato all'altro non conta.</p>
+            <p style="margin-top:.4rem"><strong>Orizzontale</strong> = conta su/giù ·
+            <strong>Verticale</strong> = conta sinistra/destra (es. ingresso da
+            una porta laterale). Imposta la <em>Direzione ingresso</em> coerente.</p></div>
+          <div class="field">
+            <label>Orientamento</label>
+            <select name="LINE_ORIENTATION">
+              <option value="horizontal">orizzontale (su/giù)</option>
+              <option value="vertical">verticale (sx/dx)</option>
+            </select>
+          </div>
           <div class="field-range"><input type="range" name="LINE_Y" min="0" max="1" step="0.01"><input type="number" name="LINE_Y_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>LINE_Y <span class="desc">posizione 0..1</span></label><span></span></div>
+          <div class="field"><label>LINE_Y <span class="desc">posizione linea orizzontale</span></label><span></span></div>
+          <div class="field-range"><input type="range" name="LINE_X" min="0" max="1" step="0.01"><input type="number" name="LINE_X_num" min="0" max="1" step="0.01"></div>
+          <div class="field"><label>LINE_X <span class="desc">posizione linea verticale</span></label><span></span></div>
           <div class="field-range"><input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01"><input type="number" name="LINE_MARGIN_num" min="0" max="0.45" step="0.01"></div>
           <div class="field"><label>LINE_MARGIN <span class="desc">zona morta</span></label><span></span></div>
         </div>
@@ -534,28 +551,45 @@
   function drawOverlay(){
     const w=canvas.clientWidth,h=canvas.clientHeight; if(!w||!h) return;
     ctx.clearRect(0,0,w,h);
-    const lineY=s.LINE_Y*h, mt=(s.LINE_Y-s.LINE_MARGIN)*h, mb=(s.LINE_Y+s.LINE_MARGIN)*h;
-    ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(0,mt,w,mb-mt);
+    // ROI
     const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h;
     ctx.fillStyle='rgba(79,195,247,.06)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
     ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
     ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
-    ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(0,lineY); ctx.lineTo(w,lineY); ctx.stroke();
-    ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
-    ctx.beginPath(); ctx.moveTo(0,mt); ctx.lineTo(w,mt); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0,mb); ctx.lineTo(w,mb); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle='#4fc3f7'; [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y])=>ctx.fillRect(x-5,y-5,10,10));
-    ctx.fillStyle='#ffeb3b'; ctx.fillRect(w/2-25,lineY-4,50,8);
-    ctx.font='11px "Roboto Mono",monospace'; ctx.fillStyle='#ffeb3b';
-    ctx.fillText('LINE '+s.LINE_Y.toFixed(2),8,lineY-6);
+    // linea + zona morta
+    ctx.font='11px "Roboto Mono",monospace';
+    if(s.LINE_ORIENTATION==='vertical'){
+      const lx=s.LINE_X*w, ml=(s.LINE_X-s.LINE_MARGIN)*w, mr=(s.LINE_X+s.LINE_MARGIN)*w;
+      ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(ml,0,mr-ml,h);
+      ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,h); ctx.stroke();
+      ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(ml,0); ctx.lineTo(ml,h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mr,0); ctx.lineTo(mr,h); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#ffeb3b'; ctx.fillRect(lx-4,h/2-25,8,50);
+      ctx.fillText('LINE X '+s.LINE_X.toFixed(2),lx+6,16);
+    } else {
+      const ly=s.LINE_Y*h, mt=(s.LINE_Y-s.LINE_MARGIN)*h, mb=(s.LINE_Y+s.LINE_MARGIN)*h;
+      ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(0,mt,w,mb-mt);
+      ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(w,ly); ctx.stroke();
+      ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(0,mt); ctx.lineTo(w,mt); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,mb); ctx.lineTo(w,mb); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#ffeb3b'; ctx.fillRect(w/2-25,ly-4,50,8);
+      ctx.fillText('LINE Y '+s.LINE_Y.toFixed(2),8,ly-6);
+    }
   }
   let drag=null;
   function pick(px,py){
     const w=canvas.clientWidth,h=canvas.clientHeight;
-    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h,ly=s.LINE_Y*h,H=10;
-    if(Math.abs(py-ly)<=6 && px>w/2-30 && px<w/2+30) return 'line';
-    if(Math.abs(py-ly)<=4) return 'line';
+    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h,H=10;
+    if(s.LINE_ORIENTATION==='vertical'){
+      if(Math.abs(px-s.LINE_X*w)<=6) return 'line';
+    } else {
+      if(Math.abs(py-s.LINE_Y*h)<=6) return 'line';
+    }
     if(Math.abs(px-x1)<H&&Math.abs(py-y1)<H) return 'tl';
     if(Math.abs(px-x2)<H&&Math.abs(py-y1)<H) return 'tr';
     if(Math.abs(px-x1)<H&&Math.abs(py-y2)<H) return 'bl';
@@ -571,9 +605,11 @@
   canvas.addEventListener('mousedown',e=>{const[px,py]=pos(e); drag=pick(px,py);});
   canvas.addEventListener('mousemove',e=>{
     const[px,py]=pos(e);
-    if(!drag){const hh=pick(px,py); canvas.style.cursor=hh?(hh==='line'?'ns-resize':'pointer'):'crosshair'; return;}
+    if(!drag){const hh=pick(px,py);
+      const lc=(s.LINE_ORIENTATION==='vertical')?'ew-resize':'ns-resize';
+      canvas.style.cursor=hh?(hh==='line'?lc:'pointer'):'crosshair'; return;}
     const w=canvas.clientWidth,h=canvas.clientHeight,nx=cl(px/w),ny=cl(py/h);
-    if(drag==='line') s.LINE_Y=ny;
+    if(drag==='line'){ if(s.LINE_ORIENTATION==='vertical') s.LINE_X=nx; else s.LINE_Y=ny; }
     else{
       if(drag.includes('l')) s.MOTION_X1=Math.min(nx,s.MOTION_X2-0.05);
       if(drag.includes('r')) s.MOTION_X2=Math.max(nx,s.MOTION_X1+0.05);

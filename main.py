@@ -23,7 +23,10 @@ def banner():
     print(f" Camera     : {Config.CAMERA}", flush=True)
     print(f" Direzione  : enter = {Config.ENTER_DIRECTION}  "
           f"point={Config.POINT_MODE}", flush=True)
-    print(f" Linea Y    : {Config.LINE_Y} ± {Config.LINE_MARGIN}", flush=True)
+    _lp = (f"X={Config.LINE_X}" if Config.LINE_ORIENTATION == "vertical"
+           else f"Y={Config.LINE_Y}")
+    print(f" Linea      : {Config.LINE_ORIENTATION} {_lp} ± {Config.LINE_MARGIN}",
+          flush=True)
     print(f" ROI        : X[{Config.MOTION_X1}-{Config.MOTION_X2}] "
           f"Y[{Config.MOTION_Y1}-{Config.MOTION_Y2}]", flush=True)
     print(f" Storage    : JSON ({Config.LOG_DIR})"

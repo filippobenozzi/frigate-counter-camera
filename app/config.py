@@ -38,7 +38,11 @@ class Config:
     # ============ Conteggio (linea + ROI) ============
     ENTER_DIRECTION = os.environ.get("ENTER_DIRECTION", "up").lower()  # up | down
     POINT_MODE = os.environ.get("POINT_MODE", "bottom").lower()        # bottom | center
+    # horizontal = linea orizzontale, conta su/giù (LINE_Y)
+    # vertical   = linea verticale, conta sinistra/destra (LINE_X)
+    LINE_ORIENTATION = os.environ.get("LINE_ORIENTATION", "horizontal").lower()
     LINE_Y = float(os.environ.get("LINE_Y", "0.50"))
+    LINE_X = float(os.environ.get("LINE_X", "0.50"))
     LINE_MARGIN = float(os.environ.get("LINE_MARGIN", "0.08"))
     MOTION_X1 = float(os.environ.get("MOTION_X1", "0.05"))
     MOTION_X2 = float(os.environ.get("MOTION_X2", "0.95"))

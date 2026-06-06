@@ -209,13 +209,21 @@ class Pipeline:
         rx2, ry2 = int(Config.MOTION_X2 * w), int(Config.MOTION_Y2 * h)
         cv2.rectangle(img, (rx1, ry1), (rx2, ry2), (247, 195, 79), 1)
 
-        # linea + margine (giallo)
-        ly = int(Config.LINE_Y * h)
-        mtop = int((Config.LINE_Y - Config.LINE_MARGIN) * h)
-        mbot = int((Config.LINE_Y + Config.LINE_MARGIN) * h)
-        cv2.line(img, (0, ly), (w, ly), (0, 235, 255), 2)
-        cv2.line(img, (0, mtop), (w, mtop), (0, 235, 255), 1)
-        cv2.line(img, (0, mbot), (w, mbot), (0, 235, 255), 1)
+        # linea + margine (giallo) — orizzontale o verticale
+        if Config.LINE_ORIENTATION == "vertical":
+            lx = int(Config.LINE_X * w)
+            ml = int((Config.LINE_X - Config.LINE_MARGIN) * w)
+            mr = int((Config.LINE_X + Config.LINE_MARGIN) * w)
+            cv2.line(img, (lx, 0), (lx, h), (0, 235, 255), 2)
+            cv2.line(img, (ml, 0), (ml, h), (0, 235, 255), 1)
+            cv2.line(img, (mr, 0), (mr, h), (0, 235, 255), 1)
+        else:
+            ly = int(Config.LINE_Y * h)
+            mtop = int((Config.LINE_Y - Config.LINE_MARGIN) * h)
+            mbot = int((Config.LINE_Y + Config.LINE_MARGIN) * h)
+            cv2.line(img, (0, ly), (w, ly), (0, 235, 255), 2)
+            cv2.line(img, (0, mtop), (w, mtop), (0, 235, 255), 1)
+            cv2.line(img, (0, mbot), (w, mbot), (0, 235, 255), 1)
 
         # box persone (bianco)
         for tr in tracked:

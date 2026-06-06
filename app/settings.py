@@ -51,7 +51,9 @@ EDITABLE = {
     "POINT_MODE":           {"type": "str",   "group": "counting"},
 
     # ===== Linea =====
+    "LINE_ORIENTATION":     {"type": "str",   "group": "line"},          # horizontal | vertical
     "LINE_Y":               {"type": "float", "min": 0.0, "max": 1.0,  "group": "line"},
+    "LINE_X":               {"type": "float", "min": 0.0, "max": 1.0,  "group": "line"},
     "LINE_MARGIN":          {"type": "float", "min": 0.0, "max": 0.45, "group": "line"},
 
     # ===== ROI =====
@@ -92,7 +94,8 @@ EDITABLE = {
     "WEBHOOK_RETRY":        {"type": "int",    "min": 0,   "max": 5,  "group": "webhook"},
 }
 
-_VALID_DIRECTIONS  = {"up", "down"}
+_VALID_DIRECTIONS  = {"up", "down", "left", "right"}
+_VALID_ORIENT      = {"horizontal", "vertical"}
 _VALID_POINT_MODES = {"bottom", "center"}
 _VALID_TRANSPORT   = {"tcp", "udp"}
 _VALID_SSLMODE     = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
@@ -109,6 +112,10 @@ def _coerce(key, raw):
             v = v.lower()
             if v and v not in _VALID_DIRECTIONS:
                 raise ValueError(f"deve essere uno tra {sorted(_VALID_DIRECTIONS)}")
+        elif key == "LINE_ORIENTATION":
+            v = v.lower()
+            if v and v not in _VALID_ORIENT:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_ORIENT)}")
         elif key == "POINT_MODE":
             v = v.lower()
             if v and v not in _VALID_POINT_MODES:

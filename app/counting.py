@@ -1,16 +1,19 @@
 """Conteggio per attraversamento linea, a macchina a stati per ogni persona.
 
-A differenza del vecchio approccio (mediana primo/ultimo punto), qui seguiamo
-in tempo reale da che lato della linea sta la persona:
+Supporta due orientamenti (Config.LINE_ORIENTATION):
 
-  zona ALTA   = y <= LINE_Y - LINE_MARGIN
-  zona BASSA  = y >= LINE_Y + LINE_MARGIN
-  zona morta  = in mezzo (nessun cambio di stato → niente conteggio)
+  horizontal -> linea orizzontale a y=LINE_Y, conta su/giù
+                zona "above": y <= LINE_Y - margin
+                zona "below": y >= LINE_Y + margin
+                movimento up (below->above) / down (above->below)
 
-Conta SOLO quando il punto passa da una zona all'altra mentre è dentro la ROI.
-Chi staziona nella zona morta, o va avanti/indietro senza superare entrambe le
-soglie, non viene mai contato. Un andata+ritorno completi contano 1 enter e
-1 exit (corretto per una porta reale).
+  vertical   -> linea verticale a x=LINE_X, conta sinistra/destra
+                zona "left":  x <= LINE_X - margin
+                zona "right": x >= LINE_X + margin
+                movimento left (right->left) / right (left->right)
+
+In mezzo c'è una "zona morta" (margine): chi non la supera da un lato all'altro
+non viene contato. Conta solo l'attraversamento completo dentro la ROI.
 """
 
 from app.config import Config
@@ -25,45 +28,60 @@ class LineCounter:
     """Stato di attraversamento per UNA persona (un id di tracking)."""
 
     def __init__(self):
-        self.side = None          # 'above' | 'below' | None
-        self.last_point = None    # ultimo (x, y) visto
+        self.side = None          # above/below | left/right | None
+        self.last_point = None
 
     def update(self, x, y):
-        """Aggiorna con il nuovo punto. Ritorna (event, reason, start_point)
-        dove event ∈ {'enter','exit',None}."""
+        """Ritorna (event, reason, start_point) con event ∈ {enter,exit,None}."""
         prev = self.last_point
         self.last_point = (x, y)
 
         inside = point_in_roi(x, y)
-        line = Config.LINE_Y
         m = Config.LINE_MARGIN
+        vertical = Config.LINE_ORIENTATION == "vertical"
 
-        if y <= line - m:
-            new_side = "above"
-        elif y >= line + m:
-            new_side = "below"
+        if vertical:
+            coord, line = x, Config.LINE_X
+            lo, hi = "left", "right"
+            enter_dir = (Config.ENTER_DIRECTION
+                         if Config.ENTER_DIRECTION in ("left", "right") else "right")
         else:
-            new_side = self.side          # zona morta: nessun cambio
+            coord, line = y, Config.LINE_Y
+            lo, hi = "above", "below"
+            enter_dir = (Config.ENTER_DIRECTION
+                         if Config.ENTER_DIRECTION in ("up", "down") else "up")
+
+        if coord <= line - m:
+            new_side = lo
+        elif coord >= line + m:
+            new_side = hi
+        else:
+            new_side = self.side          # zona morta
 
         event = None
         reason = ""
 
         if inside and self.side is not None and new_side != self.side:
-            if self.side == "above" and new_side == "below":
-                movement = "down"
-            elif self.side == "below" and new_side == "above":
-                movement = "up"
+            if vertical:
+                if self.side == "left" and new_side == "right":
+                    movement = "right"
+                elif self.side == "right" and new_side == "left":
+                    movement = "left"
+                else:
+                    movement = None
             else:
-                movement = None
+                if self.side == "below" and new_side == "above":
+                    movement = "up"
+                elif self.side == "above" and new_side == "below":
+                    movement = "down"
+                else:
+                    movement = None
 
             if movement:
-                event = ("enter" if movement == Config.ENTER_DIRECTION
-                         else "exit")
-                reason = (f"cross movement={movement} y={y:.3f} "
-                          f"line={line:.2f} margin={m:.2f}")
+                event = "enter" if movement == enter_dir else "exit"
+                reason = (f"cross {'V' if vertical else 'H'} move={movement} "
+                          f"pos={coord:.3f} line={line:.2f} margin={m:.2f}")
 
-        # aggiorna lo stato lato linea solo quando siamo dentro la ROI
-        # (oppure al primissimo punto, per inizializzare)
         if new_side is not None and (inside or self.side is None):
             self.side = new_side
 
