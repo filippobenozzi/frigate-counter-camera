@@ -21,6 +21,9 @@ services:
       # opzionale: monta un modello ONNX tuo (altrimenti usa quello in /models)
       # - ./models:/models
     environment:
+      # fuso orario per gli orari di log/eventi/dashboard
+      TZ: "Europe/Rome"
+
       # ===== Sorgente video RTSP / RTSPS (substream a bassa risoluzione) =====
       RTSP_URL: "rtsp://user:pass@192.168.1.50:554/Streaming/Channels/102"
       RTSP_TRANSPORT: "tcp"          # tcp (consigliato) | udp

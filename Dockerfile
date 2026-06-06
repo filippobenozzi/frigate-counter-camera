@@ -44,8 +44,11 @@ FROM python:3.12-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-        libpq5 libglib2.0-0 libgomp1 ca-certificates \
+        libpq5 libglib2.0-0 libgomp1 ca-certificates tzdata \
  && rm -rf /var/lib/apt/lists/*
+
+# fuso orario di default (sovrascrivibile con la env TZ nel compose)
+ENV TZ=Europe/Rome
 
 WORKDIR /app
 

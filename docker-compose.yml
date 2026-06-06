@@ -21,6 +21,9 @@ services:
       # opzionale: monta un modello ONNX tuo (altrimenti usa quello in /models)
       # - ./models:/models
     environment:
+      # fuso orario per gli orari di log/eventi/dashboard
+      TZ: "Europe/Rome"
+
       # ===== Sorgente video RTSP / RTSPS (substream a bassa risoluzione) =====
       RTSP_URL: "rtsps://192.168.1.2:7441/lU1KMsla8kjpxX2P?enableSrtp"
       RTSP_TRANSPORT: "udp"          # tcp (consigliato) | udp
@@ -96,6 +99,8 @@ services:
     #       cpus: "2.0"
     depends_on:
       - postgres
+    network:
+      - default
 
   postgres:
     image: postgres:16-alpine
@@ -110,3 +115,5 @@ services:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
     ports:
       - "5432:5432"
+    network:
+      - default
