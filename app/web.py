@@ -424,6 +424,7 @@ GROUP BY camera, date_trunc('hour', ts);
     @app.route("/api/snapshot")
     @login_required
     def api_snapshot():
+        pipeline.note_snapshot_request()      # attiva l'overlay finché si guarda
         jpg = pipeline.latest_jpeg()
         if jpg is None:
             st = pipeline.stats()

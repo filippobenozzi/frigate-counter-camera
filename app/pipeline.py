@@ -41,6 +41,9 @@ class Pipeline:
         self._jpeg_lock = threading.Lock()
         self._running = False
         self._stats = {"detect_ms": 0.0, "proc_fps": 0.0, "detections": 0}
+        # overlay solo se qualcuno guarda lo snapshot (risparmio CPU)
+        self._last_snap_request = 0.0
+        self._render_min_period = 0.2          # max ~5 fps di overlay
 
     # ---------------- avvio ----------------
 
@@ -61,8 +64,13 @@ class Pipeline:
 
     # ---------------- loop principale ----------------
 
+    def note_snapshot_request(self):
+        """Segnala che qualcuno sta guardando lo snapshot (attiva l'overlay)."""
+        self._last_snap_request = time.time()
+
     def _run(self):
         last_seq = -1
+        last_render = 0.0
         proc_ema = 0.0
 
         while self._running:
@@ -88,7 +96,16 @@ class Pipeline:
             tracked = self.tracker.update(arr)
 
             self._process_tracks(tracked, w, h)
-            self._render(frame, dets, tracked)
+
+            # overlay+JPEG solo se qualcuno guarda lo snapshot (ultimi 10s),
+            # throttlato a ~5 fps: quando nessuno è sulle impostazioni, niente
+            # costo di disegno/encode
+            now = time.time()
+            if (Config.DRAW_OVERLAY
+                    and now - self._last_snap_request < 10.0
+                    and now - last_render >= self._render_min_period):
+                self._render(frame, dets, tracked)
+                last_render = now
 
             # statistiche
             dt = time.time() - t0

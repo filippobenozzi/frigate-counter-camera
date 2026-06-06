@@ -40,10 +40,15 @@ class YoloDetector:
         if cv2 is None:
             raise RuntimeError("opencv non installato")
 
+        import os
         so = ort.SessionOptions()
-        if Config.ORT_THREADS > 0:
-            so.intra_op_num_threads = Config.ORT_THREADS
-            so.inter_op_num_threads = 1
+        # Default: cap a min(4, n_core). yolov8n su CPU NON scala oltre pochi
+        # thread (è memory-bound): lasciare l'auto di ORT = prende tutti i core
+        # = CPU al 100% per nulla. Si può forzare con ORT_THREADS.
+        threads = (Config.ORT_THREADS if Config.ORT_THREADS > 0
+                   else min(4, os.cpu_count() or 4))
+        so.intra_op_num_threads = threads
+        so.inter_op_num_threads = 1
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
         self.session = ort.InferenceSession(
@@ -55,8 +60,7 @@ class YoloDetector:
         self.size = Config.DETECT_INPUT_SIZE
         self.last_ms = 0.0
         print(f"[detector] modello caricato: {Config.MODEL_PATH} "
-              f"input={self.size} threads={Config.ORT_THREADS or 'auto'}",
-              flush=True)
+              f"input={self.size} threads={threads}", flush=True)
 
     def detect(self, frame_bgr):
         img, r, padx, pady = letterbox(frame_bgr, self.size)
