@@ -1,4 +1,4 @@
-"""Flask app: dashboard + API + auth. Sorgente dati = pipeline YOLO/RTSP."""
+"""Flask app: dashboard + API + auth. Sorgente dati = eventi MQTT (ESP)."""
 
 import csv
 import io
@@ -39,7 +39,7 @@ def _filter_hour_range(events, h_from, h_to):
     return out
 
 
-def create_app(store, pipeline):
+def create_app(store, mqtt):
     app = Flask(__name__, template_folder="templates")
     app.secret_key = Config.SECRET_KEY
     app.permanent_session_lifetime = timedelta(days=Config.SESSION_DAYS)
@@ -84,7 +84,6 @@ def create_app(store, pipeline):
         day_enter = sum(b["enter"] for b in hourly)
         day_exit = sum(b["exit"] for b in hourly)
         day_peak = max((b["occupancy"] for b in hourly), default=0)
-
         filtered = list(reversed(_filter_hour_range(events, h_from, h_to)))
 
         return render_template(
@@ -105,8 +104,7 @@ def create_app(store, pipeline):
             h_to=h_to if h_to is not None else 23,
             postgres_enabled=Config.postgres_enabled(),
             auth_enabled=Config.auth_enabled(),
-            enter_direction=Config.ENTER_DIRECTION,
-            point_mode=Config.POINT_MODE,
+            mqtt_connected=mqtt.connected,
         )
 
     # ===================== API dati =====================
@@ -121,10 +119,8 @@ def create_app(store, pipeline):
     @login_required
     def api_hourly():
         day = _parse_day(request.args.get("day"))
-        return jsonify({
-            "day": day.isoformat(),
-            "hourly": summarize_hourly(store.get_events_for_day(day)),
-        })
+        return jsonify({"day": day.isoformat(),
+                        "hourly": summarize_hourly(store.get_events_for_day(day))})
 
     @app.route("/api/events")
     @login_required
@@ -133,45 +129,18 @@ def create_app(store, pipeline):
         events = store.get_events_for_day(day)
         h_from = request.args.get("from", type=int)
         h_to = request.args.get("to", type=int)
-        return jsonify({
-            "day": day.isoformat(),
-            "count": len(events),
-            "events": _filter_hour_range(events, h_from, h_to),
-        })
+        return jsonify({"day": day.isoformat(), "count": len(events),
+                        "events": _filter_hour_range(events, h_from, h_to)})
 
     @app.route("/api/days")
     @login_required
     def api_days():
         return jsonify([d.isoformat() for d in store.get_available_days()])
 
-    @app.route("/api/tracks")
-    @login_required
-    def api_tracks():
-        # persone attualmente tracciate (live dal pipeline)
-        return jsonify(pipeline.tracks)
-
     @app.route("/api/health")
     @login_required
     def api_health():
-        return jsonify(pipeline.stats())
-
-    # alias usato dal bottone "Diagnostica" nella pagina impostazioni
-    @app.route("/api/snapshot/diag")
-    @login_required
-    def api_snapshot_diag():
-        st = pipeline.stats()
-        ok = bool(st.get("opened") and st.get("model_loaded"))
-        hint = ""
-        if not Config.rtsp_configured():
-            hint = "RTSP_URL non configurato: imposta lo stream nelle impostazioni."
-        elif not st.get("opened"):
-            hint = ("Stream non aperto: controlla URL/credenziali/transport. "
-                    f"Riconnessioni: {st.get('reconnects')}.")
-        elif not st.get("model_loaded"):
-            hint = "Modello non caricato: verifica MODEL_PATH."
-        elif st.get("last_frame_age") and st["last_frame_age"] > 5:
-            hint = "Frame vecchi: lo stream potrebbe essersi bloccato."
-        return jsonify({"ok": ok, "hint": hint, "stats": st})
+        return jsonify(mqtt.stats())
 
     # ===================== ADMIN reset =====================
 
@@ -181,8 +150,6 @@ def create_app(store, pipeline):
         with store.lock:
             store.counts["enter"] = 0
             store.counts["exit"] = 0
-            pipeline.counters.clear()
-            pipeline.recent.clear()
             store.save_counts()
             snap = store.snapshot()
         print("[admin] reset cumulativi", flush=True)
@@ -206,10 +173,8 @@ def create_app(store, pipeline):
             snap = store.snapshot()
         print(f"[admin] reset day {day}: -{ent_del} enter, -{exi_del} exit",
               flush=True)
-        return jsonify({
-            "ok": True, "action": "reset-day", "day": day.isoformat(),
-            "deleted_enter": ent_del, "deleted_exit": exi_del, **snap,
-        })
+        return jsonify({"ok": True, "action": "reset-day", "day": day.isoformat(),
+                        "deleted_enter": ent_del, "deleted_exit": exi_del, **snap})
 
     @app.route("/api/admin/reset-all", methods=["POST"])
     @login_required
@@ -218,8 +183,6 @@ def create_app(store, pipeline):
             deleted_pg = store.delete_all_events()
             store.counts["enter"] = 0
             store.counts["exit"] = 0
-            pipeline.counters.clear()
-            pipeline.recent.clear()
             store.save_counts()
             snap = store.snapshot()
         print(f"[admin] WIPE totale (postgres: {deleted_pg} righe)", flush=True)
@@ -240,25 +203,19 @@ def create_app(store, pipeline):
         h_from = request.args.get("from", type=int)
         h_to = request.args.get("to", type=int)
         events = _filter_hour_range(store.get_events_for_day(day), h_from, h_to)
-
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["datetime", "type", "method", "start_x", "start_y",
-                    "end_x", "end_y", "enter_after", "exit_after",
+        w.writerow(["datetime", "type", "method", "enter_after", "exit_after",
                     "occupancy_after", "reason"])
         for e in events:
             c = e.get("counts_after", {})
-            w.writerow([
-                e.get("datetime", ""), e.get("type", ""), e.get("method", ""),
-                e.get("start", {}).get("x", ""), e.get("start", {}).get("y", ""),
-                e.get("end", {}).get("x", ""), e.get("end", {}).get("y", ""),
-                c.get("enter", ""), c.get("exit", ""), c.get("occupancy", ""),
-                e.get("reason", ""),
-            ])
+            w.writerow([e.get("datetime", ""), e.get("type", ""),
+                        e.get("method", ""), c.get("enter", ""),
+                        c.get("exit", ""), c.get("occupancy", ""),
+                        e.get("reason", "")])
         return Response(buf.getvalue(), mimetype="text/csv", headers={
             "Content-Disposition":
-                f'attachment; filename="counter_{Config.CAMERA}_{day}.csv"',
-        })
+                f'attachment; filename="counter_{Config.CAMERA}_{day}.csv"'})
 
     # ===================== SETTINGS =====================
 
@@ -275,19 +232,15 @@ def create_app(store, pipeline):
             stats=store.get_stats(),
             today_iso=date.today().isoformat(),
             postgres_enabled=Config.postgres_enabled(),
-            rtsp_configured=Config.rtsp_configured(),
-            snapshot_refresh=Config.SNAPSHOT_REFRESH_SEC,
+            mqtt_connected=mqtt.connected,
             auth_enabled=Config.auth_enabled(),
         )
 
     @app.route("/api/settings", methods=["GET"])
     @login_required
     def api_settings_get():
-        return jsonify({
-            "current": Settings.current(),
-            "schema": Settings.schema(),
-            "postgres_connected": store.pg is not None,
-        })
+        return jsonify({"current": Settings.current(), "schema": Settings.schema(),
+                        "postgres_connected": store.pg is not None})
 
     @app.route("/api/settings", methods=["POST"])
     @login_required
@@ -299,19 +252,14 @@ def create_app(store, pipeline):
         except ValueError as e:
             return jsonify({"ok": False, "error": str(e)}), 400
         print(f"[settings] aggiornati: {result['changed']}", flush=True)
-
         pg_result = None
         if any(k.startswith("DB_") for k in result["changed"]):
             ok, msg = store.reconnect_postgres()
             pg_result = {"ok": ok, "message": msg}
-
-        return jsonify({
-            "ok": True,
-            "changed": result["changed"],
-            "restart_needed": result["restart_needed"],
-            "postgres_reconnect": pg_result,
-            "current": Settings.current(),
-        })
+        return jsonify({"ok": True, "changed": result["changed"],
+                        "restart_needed": result["restart_needed"],
+                        "postgres_reconnect": pg_result,
+                        "current": Settings.current()})
 
     # ===================== DATABASE =====================
 
@@ -334,7 +282,6 @@ def create_app(store, pipeline):
         schema = pick("DB_SCHEMA", Config.DB_SCHEMA)
         table = pick("DB_TABLE", Config.DB_TABLE)
         sslmode = pick("DB_SSLMODE", Config.DB_SSLMODE)
-
         if not (host and name and user):
             return jsonify({"ok": False,
                             "error": "DB_HOST, DB_NAME, DB_USER obbligatori"}), 400
@@ -347,21 +294,15 @@ def create_app(store, pipeline):
         schema = Config.DB_SCHEMA or "public"
         table = Config.DB_TABLE or "counter_events"
         full = f'"{schema}"."{table}"'
-        sql = f"""-- Schema PostgreSQL per Person Counter
--- L'app crea la tabella da sola al primo connect se l'utente DB ha CREATE.
--- Eseguilo a mano solo se serve un setup esplicito.
-
+        sql = f"""-- Schema PostgreSQL per Person Counter (eventi MQTT)
 CREATE TABLE IF NOT EXISTS {full} (
     id              BIGSERIAL    PRIMARY KEY,
-    event_id        TEXT         NOT NULL,             -- id evento (ts-track)
+    event_id        TEXT         NOT NULL,
     camera          TEXT         NOT NULL,
-    ts              TIMESTAMPTZ  NOT NULL,             -- istante conteggio
+    ts              TIMESTAMPTZ  NOT NULL,
     event_type      TEXT         NOT NULL CHECK (event_type IN ('enter','exit')),
-    method          TEXT,                              -- es. 'yolo_line'
-    start_x         REAL,
-    start_y         REAL,
-    end_x           REAL,
-    end_y           REAL,
+    method          TEXT,                              -- 'mqtt'
+    start_x REAL, start_y REAL, end_x REAL, end_y REAL,
     reason          TEXT,
     enter_total     INTEGER      NOT NULL DEFAULT 0,
     exit_total      INTEGER      NOT NULL DEFAULT 0,
@@ -369,25 +310,9 @@ CREATE TABLE IF NOT EXISTS {full} (
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     UNIQUE (event_id, event_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_{table}_camera_ts ON {full} (camera, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_{table}_ts        ON {full} (ts DESC);
 CREATE INDEX IF NOT EXISTS idx_{table}_type      ON {full} (event_type);
-
-CREATE OR REPLACE VIEW {schema}.counter_daily_summary AS
-SELECT camera, (ts AT TIME ZONE 'UTC')::date AS day,
-       COUNT(*) FILTER (WHERE event_type='enter') AS enter_count,
-       COUNT(*) FILTER (WHERE event_type='exit')  AS exit_count,
-       MAX(occupancy) AS peak_occupancy
-FROM {full}
-GROUP BY camera, (ts AT TIME ZONE 'UTC')::date;
-
-CREATE OR REPLACE VIEW {schema}.counter_hourly_summary AS
-SELECT camera, date_trunc('hour', ts) AS hour,
-       COUNT(*) FILTER (WHERE event_type='enter') AS enter_count,
-       COUNT(*) FILTER (WHERE event_type='exit')  AS exit_count
-FROM {full}
-GROUP BY camera, date_trunc('hour', ts);
 """
         return jsonify({"sql": sql, "table": full})
 
@@ -404,39 +329,16 @@ GROUP BY camera, date_trunc('hour', ts);
             "datetime": time.strftime("%Y-%m-%d %H:%M:%S"),
             "occupancy": 0, "enter_total": 0, "exit_total": 0,
             "method": "test", "event_id": "test-event",
-            "start": {"x": 0.50, "y": 0.10}, "end": {"x": 0.50, "y": 0.90},
             "reason": "manual test from /settings", "_test": True,
         }
         try:
             status, body = webhook_mod._post_once(
                 Config.WEBHOOK_URL, payload, Config.WEBHOOK_TIMEOUT)
-            return jsonify({
-                "ok": 200 <= status < 300, "status": status,
-                "body_preview": body.decode("utf-8", errors="replace")[:300],
-                "url": Config.WEBHOOK_URL,
-            })
+            return jsonify({"ok": 200 <= status < 300, "status": status,
+                            "body_preview": body.decode("utf-8", errors="replace")[:300],
+                            "url": Config.WEBHOOK_URL})
         except Exception as e:
             return jsonify({"ok": False, "error": f"{type(e).__name__}: {e}",
                             "url": Config.WEBHOOK_URL}), 502
-
-    # ===================== SNAPSHOT (dal pipeline) =====================
-
-    @app.route("/api/snapshot")
-    @login_required
-    def api_snapshot():
-        pipeline.note_snapshot_request()      # attiva l'overlay finché si guarda
-        jpg = pipeline.latest_jpeg()
-        if jpg is None:
-            st = pipeline.stats()
-            return jsonify({
-                "ok": False,
-                "error": "nessun frame disponibile",
-                "hint": ("RTSP_URL non configurato"
-                         if not Config.rtsp_configured()
-                         else "in attesa del primo frame / modello in caricamento"),
-                "stats": st,
-            }), 503
-        return Response(jpg, mimetype="image/jpeg",
-                        headers={"Cache-Control": "no-store"})
 
     return app

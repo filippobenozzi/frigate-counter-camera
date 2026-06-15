@@ -8,199 +8,106 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    :root {
-      --bg:#000; --panel:#0d0d0d; --panel2:#161616; --panel3:#1f1f1f;
-      --border:#262626; --border-st:#3a3a3a;
-      --text:#f5f5f5; --text2:#d4d4d4; --muted:#999; --dim:#666; --dimmer:#444;
-      --accent:#fff; --line:#ffeb3b; --roi:#4fc3f7;
-      --ok:#88dd88; --warn:#ffd58a; --err:#ffaaaa;
-    }
-    body { font-family:"Roboto Mono",ui-monospace,Menlo,monospace;
-      background:var(--bg); color:var(--text); margin:0;
-      font-feature-settings:"tnum" 1,"zero" 1; padding-bottom:84px; }
-
-    header { background:var(--panel); border-bottom:1px solid var(--border);
-      padding:1rem 2rem; display:flex; align-items:center;
-      justify-content:space-between; flex-wrap:wrap; gap:1rem; }
-    header h1 { margin:0; font-size:.95rem; font-weight:700;
-      text-transform:uppercase; letter-spacing:.12em; }
+    *,*::before,*::after{box-sizing:border-box}
+    :root{--bg:#000;--panel:#0d0d0d;--panel2:#161616;--panel3:#1f1f1f;
+      --border:#262626;--border-st:#3a3a3a;--text:#f5f5f5;--text2:#d4d4d4;
+      --muted:#999;--dim:#666;--dimmer:#444;--accent:#fff;
+      --ok:#88dd88;--warn:#ffd58a;--err:#ffaaaa}
+    body{font-family:"Roboto Mono",ui-monospace,Menlo,monospace;background:var(--bg);
+      color:var(--text);margin:0;font-feature-settings:"tnum" 1,"zero" 1;padding-bottom:84px}
+    header{background:var(--panel);border-bottom:1px solid var(--border);
+      padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;
+      flex-wrap:wrap;gap:1rem}
+    header h1{margin:0;font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
     header h1 .cam{color:var(--accent)} header h1 .sep{color:var(--dimmer);margin:0 .5rem}
     header h1 .crumb{color:var(--muted)}
-    .actions{display:flex; gap:.4rem; align-items:center}
-
-    .tabs-bar { background:var(--panel); border-bottom:1px solid var(--border);
-      padding:0 2rem; display:flex; gap:.25rem; overflow-x:auto; }
-    .tab { padding:.95rem 1.25rem; background:transparent; color:var(--muted);
-      border:0; border-bottom:2px solid transparent; font-family:inherit;
-      font-size:.75rem; font-weight:500; letter-spacing:.12em;
-      text-transform:uppercase; cursor:pointer; white-space:nowrap;
-      display:inline-flex; align-items:center; gap:.5rem; }
-    .tab:hover{color:var(--text2)}
-    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
-    .tab .ico{font-size:1rem; opacity:.85}
-    .tab-panel{display:none; padding:2rem; max-width:1400px; margin:0 auto}
+    .actions{display:flex;gap:.4rem;align-items:center}
+    .tabs-bar{background:var(--panel);border-bottom:1px solid var(--border);
+      padding:0 2rem;display:flex;gap:.25rem;overflow-x:auto}
+    .tab{padding:.95rem 1.25rem;background:transparent;color:var(--muted);border:0;
+      border-bottom:2px solid transparent;font-family:inherit;font-size:.75rem;
+      font-weight:500;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+      white-space:nowrap;display:inline-flex;align-items:center;gap:.5rem}
+    .tab:hover{color:var(--text2)} .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-panel{display:none;padding:2rem;max-width:1100px;margin:0 auto}
     .tab-panel.active{display:block}
-
-    .btn { padding:.5rem .9rem; border-radius:3px; background:var(--panel2);
-      color:var(--text); border:1px solid var(--border); cursor:pointer;
-      font-size:.75rem; font-weight:500; letter-spacing:.08em;
-      text-transform:uppercase; text-decoration:none; font-family:inherit;
-      display:inline-flex; align-items:center; gap:.35rem;
-      transition:background .15s,border-color .15s; }
-    .btn:hover{background:var(--panel3); border-color:var(--border-st)}
-    .btn.primary{background:var(--accent); color:var(--bg);
-      border-color:var(--accent); font-weight:700}
+    .btn{padding:.5rem .9rem;border-radius:3px;background:var(--panel2);color:var(--text);
+      border:1px solid var(--border);cursor:pointer;font-size:.75rem;font-weight:500;
+      letter-spacing:.08em;text-transform:uppercase;text-decoration:none;font-family:inherit;
+      display:inline-flex;align-items:center;gap:.35rem;transition:background .15s,border-color .15s}
+    .btn:hover{background:var(--panel3);border-color:var(--border-st)}
+    .btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
     .btn.primary:hover{background:#ccc}
-    .btn.danger{color:var(--text); border-color:var(--border-st)}
-    .btn.danger:hover{background:#2a1414; border-color:#5a3030; color:#ffaaaa}
-    .btn.warn:hover{background:#1f1a10; border-color:#5a4a20; color:#ffd58a}
-    .btn-mini{font-size:.6rem; padding:.3rem .6rem}
-
-    .section-title{display:flex; align-items:center; justify-content:space-between;
-      margin:0 0 1rem}
-    .section-title:not(:first-child){margin-top:2rem}
-    .section-title h2{margin:0; font-size:.7rem; color:var(--muted);
-      text-transform:uppercase; letter-spacing:.15em; font-weight:500}
-    .section-title h2::before{content:"// "; color:var(--dimmer)}
-    .section-title .hint{color:var(--dim); font-size:.7rem}
-
-    .camera-split{display:grid; gap:1.5rem; grid-template-columns:1fr}
-    .canvas-panel{background:var(--panel); border:1px solid var(--border);
-      border-radius:4px; padding:1rem; max-width:1100px; margin:0 auto; width:100%}
-    .canvas-wrap{position:relative; width:100%; background:#000;
-      border:1px solid var(--border); border-radius:3px; overflow:hidden;
-      aspect-ratio:16/9}
-    .canvas-wrap img{display:block; position:absolute; inset:0; width:100%;
-      height:100%; object-fit:contain; pointer-events:none; user-select:none}
-    .canvas-wrap canvas{position:absolute; inset:0; width:100%; height:100%;
-      cursor:crosshair}
-    .canvas-wrap.no-img::before{content:"// stream non disponibile — controlla RTSP_URL";
-      color:var(--dim); position:absolute; inset:0; display:flex;
-      align-items:center; justify-content:center; font-size:.8rem}
-    .canvas-toolbar{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
-      margin-top:.75rem}
-    .canvas-toolbar .legend{display:flex; gap:.75rem; flex-wrap:wrap;
-      color:var(--muted); font-size:.7rem; margin-left:auto}
-    .canvas-toolbar .legend .sw{display:inline-block; width:10px; height:10px;
-      vertical-align:middle; margin-right:.35rem; border-radius:1px}
-    .canvas-toolbar .legend .sw.line{background:#ffeb3b}
-    .canvas-toolbar .legend .sw.roi{background:#4fc3f7}
-    .canvas-toolbar .legend .sw.box{background:#fff}
-    .canvas-toolbar .refresh{color:var(--dim); font-size:.7rem}
-
-    .params-grid{display:flex; flex-direction:column; gap:1rem;
-      max-width:1100px; margin:0 auto}
-    .card{background:var(--panel); border:1px solid var(--border);
-      border-radius:4px; padding:1.25rem; margin-bottom:1rem}
-    .params-grid .card{margin-bottom:0}
-    .card h3{margin:0 0 1rem; font-size:.7rem; text-transform:uppercase;
-      letter-spacing:.15em; color:var(--text); font-weight:500;
-      display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
-    .card h3::before{content:"// "; color:var(--dimmer)}
-    .card h3 .restart-tag{font-size:.55rem; font-weight:500; letter-spacing:.1em;
-      color:var(--warn); padding:.15rem .45rem; background:rgba(255,213,138,.08);
-      border:1px solid rgba(255,213,138,.25); border-radius:2px;
-      text-transform:uppercase}
-    .card h3 .pg-badge{font-size:.55rem; font-weight:500; letter-spacing:.1em;
-      padding:.15rem .45rem; background:var(--panel3); color:var(--dim);
-      border:1px solid var(--border); border-radius:2px; text-transform:uppercase}
-    .card h3 .pg-badge.ok{background:rgba(136,221,136,.08); color:var(--ok);
-      border-color:rgba(136,221,136,.25)}
-    .card h3 .pg-badge.err{background:rgba(255,170,170,.08); color:var(--err);
-      border-color:rgba(255,170,170,.25)}
-
-    .help{background:var(--panel2); border:1px solid var(--border);
-      border-left:3px solid var(--accent); border-radius:3px; padding:.7rem .9rem;
-      font-size:.72rem; line-height:1.55; color:var(--text2); margin-bottom:1rem}
-    .help.line{border-left-color:var(--line)} .help.roi{border-left-color:var(--roi)}
-    .help p{margin:0; color:var(--muted)} .help p+p{margin-top:.4rem}
-    .help strong{color:var(--text); font-weight:500}
-    .help code, .card code{background:var(--bg); color:var(--text2);
-      padding:.05rem .35rem; border-radius:2px; border:1px solid var(--border);
-      font-size:.68rem}
-    .help summary{cursor:pointer; color:var(--text); font-weight:500}
-
-    .field{display:grid; grid-template-columns:1fr 120px; gap:.6rem;
-      align-items:center; margin-bottom:.6rem}
+    .btn.danger{color:var(--text);border-color:var(--border-st)}
+    .btn.danger:hover{background:#2a1414;border-color:#5a3030;color:#ffaaaa}
+    .btn.warn:hover{background:#1f1a10;border-color:#5a4a20;color:#ffd58a}
+    .btn-mini{font-size:.6rem;padding:.3rem .6rem}
+    .section-title{margin:0 0 1rem} .section-title:not(:first-child){margin-top:2rem}
+    .section-title h2{margin:0;font-size:.7rem;color:var(--muted);text-transform:uppercase;
+      letter-spacing:.15em;font-weight:500} .section-title h2::before{content:"// ";color:var(--dimmer)}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+      padding:1.25rem;margin-bottom:1rem}
+    .card h3{margin:0 0 1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;
+      color:var(--text);font-weight:500;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .card h3::before{content:"// ";color:var(--dimmer)}
+    .card h3 .tag{font-size:.55rem;font-weight:500;letter-spacing:.1em;padding:.15rem .45rem;
+      border-radius:2px;text-transform:uppercase;background:var(--panel3);color:var(--dim);
+      border:1px solid var(--border)}
+    .card h3 .tag.restart{color:var(--warn);background:rgba(255,213,138,.08);border-color:rgba(255,213,138,.25)}
+    .card h3 .tag.ok{color:var(--ok);background:rgba(136,221,136,.08);border-color:rgba(136,221,136,.25)}
+    .card h3 .tag.err{color:var(--err);background:rgba(255,170,170,.08);border-color:rgba(255,170,170,.25)}
+    .help{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);
+      border-radius:3px;padding:.7rem .9rem;font-size:.72rem;line-height:1.55;color:var(--text2);margin-bottom:1rem}
+    .help p{margin:0;color:var(--muted)} .help p+p{margin-top:.4rem} .help strong{color:var(--text)}
+    .help code,.card code{background:var(--bg);color:var(--text2);padding:.05rem .35rem;
+      border-radius:2px;border:1px solid var(--border);font-size:.68rem}
+    .field{display:grid;grid-template-columns:1fr 150px;gap:.6rem;align-items:center;margin-bottom:.6rem}
     .field.full{grid-template-columns:1fr}
-    .field label{font-size:.72rem; color:var(--text2)}
-    .field label .desc{display:block; color:var(--dim); font-size:.6rem;
-      margin-top:.15rem}
-    .field input, .field select, .field textarea{background:var(--panel2);
-      color:var(--text); border:1px solid var(--border); border-radius:3px;
-      padding:.45rem .55rem; font-size:.8rem; font-family:inherit;
-      text-align:right; width:100%}
-    .field select, .field textarea, .field input.text{text-align:left}
-    .field textarea{resize:vertical; min-height:60px}
-    .field input:focus, .field select:focus, .field textarea:focus{
-      outline:none; border-color:var(--accent)}
-    .field-range{display:grid; grid-template-columns:1fr 90px; gap:.5rem;
-      align-items:center; margin-bottom:.15rem}
-    .field-range input[type=range]{width:100%; accent-color:var(--accent)}
-    .row-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem}
-    .feedback{margin-top:.75rem; font-size:.72rem; color:var(--muted);
-      line-height:1.5; word-break:break-word}
-    .feedback .ok{color:var(--ok); font-weight:500}
-    .feedback .err{color:var(--err); font-weight:500}
-
-    .status-grid{display:grid; gap:1px;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      background:var(--border); border:1px solid var(--border);
-      border-radius:4px; overflow:hidden; margin-bottom:2rem}
-    .stat{background:var(--panel); padding:1rem 1.25rem}
-    .stat .lbl{color:var(--muted); font-size:.6rem; text-transform:uppercase;
-      letter-spacing:.15em; font-weight:500; margin-bottom:.4rem}
-    .stat .val{font-size:1.4rem; font-weight:500; line-height:1.1;
-      word-break:break-all}
-    .stat .val.dim{color:var(--dim); font-size:.9rem; font-weight:300}
-    .stat .sub{color:var(--dim); font-size:.65rem; margin-top:.35rem}
-
-    .action{background:var(--panel); border:1px solid var(--border);
-      border-left:3px solid var(--dimmer); border-radius:4px; padding:1.5rem;
-      margin-bottom:1rem; display:grid; grid-template-columns:1fr auto;
-      gap:1.5rem; align-items:start}
-    .action.danger{border-left-color:#aa3030}
-    .action.warn{border-left-color:#aa7720}
-    .action.safe{border-left-color:#4a4a4a}
-    .action .desc h4{margin:0 0 .35rem; font-size:.8rem; font-weight:700;
-      text-transform:uppercase; letter-spacing:.1em}
-    .action .desc p{margin:0; color:var(--muted); font-size:.8rem; line-height:1.6}
-    .action .desc small{display:block; color:var(--dim); font-size:.7rem;
-      margin-top:.5rem}
-    .action .ctrl{display:flex; flex-direction:column; gap:.5rem; min-width:230px}
-    .action .ctrl input[type=date]{background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); border-radius:3px; padding:.5rem .7rem;
-      font-size:.8rem; font-family:inherit; color-scheme:dark; width:100%}
+    .field label{font-size:.72rem;color:var(--text2)}
+    .field label .desc{display:block;color:var(--dim);font-size:.6rem;margin-top:.15rem}
+    .field input,.field select,.field textarea{background:var(--panel2);color:var(--text);
+      border:1px solid var(--border);border-radius:3px;padding:.45rem .55rem;font-size:.8rem;
+      font-family:inherit;width:100%}
+    .field input{text-align:right} .field input.text,.field select,.field textarea{text-align:left}
+    .field textarea{resize:vertical;min-height:60px}
+    .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+    .row-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+    .feedback{margin-top:.75rem;font-size:.72rem;color:var(--muted);line-height:1.5;word-break:break-word}
+    .feedback .ok{color:var(--ok);font-weight:500} .feedback .err{color:var(--err);font-weight:500}
+    .status-grid{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:2rem}
+    .stat{background:var(--panel);padding:1rem 1.25rem}
+    .stat .lbl{color:var(--muted);font-size:.6rem;text-transform:uppercase;letter-spacing:.15em;
+      font-weight:500;margin-bottom:.4rem}
+    .stat .val{font-size:1.4rem;font-weight:500;line-height:1.1;word-break:break-all}
+    .stat .val.dim{color:var(--dim);font-size:.9rem;font-weight:300}
+    .stat .sub{color:var(--dim);font-size:.65rem;margin-top:.35rem}
+    .action{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--dimmer);
+      border-radius:4px;padding:1.5rem;margin-bottom:1rem;display:grid;grid-template-columns:1fr auto;
+      gap:1.5rem;align-items:start}
+    .action.danger{border-left-color:#aa3030} .action.warn{border-left-color:#aa7720} .action.safe{border-left-color:#4a4a4a}
+    .action .desc h4{margin:0 0 .35rem;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+    .action .desc p{margin:0;color:var(--muted);font-size:.8rem;line-height:1.6}
+    .action .desc small{display:block;color:var(--dim);font-size:.7rem;margin-top:.5rem}
+    .action .ctrl{display:flex;flex-direction:column;gap:.5rem;min-width:230px}
+    .action .ctrl input[type=date]{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+      border-radius:3px;padding:.5rem .7rem;font-size:.8rem;font-family:inherit;color-scheme:dark;width:100%}
     .action .ctrl .btn{justify-content:center}
-    @media (max-width:720px){.action{grid-template-columns:1fr}.action .ctrl{min-width:0}}
-
-    .save-bar{position:fixed; bottom:0; left:0; right:0; z-index:50;
-      background:var(--panel); border-top:1px solid var(--border);
-      padding:1rem 2rem; display:flex; gap:.5rem; align-items:center;
-      flex-wrap:wrap; box-shadow:0 -8px 24px rgba(0,0,0,.6)}
-    .save-bar .save-feedback{flex:1; min-height:1rem; font-size:.75rem;
-      color:var(--muted); line-height:1.4}
-    .save-bar .save-feedback .ok{color:var(--ok); font-weight:500}
-    .save-bar .save-feedback .err{color:var(--err); font-weight:500}
-    .save-bar .save-feedback .warn{color:var(--warn); font-weight:500}
-
-    pre.out{margin:.5rem 0 0; padding:.7rem; background:var(--bg);
-      border:1px solid var(--border); border-radius:3px; max-height:300px;
-      overflow:auto; font-size:.65rem; color:var(--text2); white-space:pre}
-    .snap-error{margin-top:.75rem; padding:.85rem 1rem; background:#1a0f0f;
-      border:1px solid #5a3030; border-left:3px solid #aa3030; border-radius:3px;
-      font-size:.78rem; line-height:1.5; color:#ffcccc}
-    ::-webkit-scrollbar{width:10px; height:10px}
-    ::-webkit-scrollbar-thumb{background:var(--border-st); border-radius:5px;
-      border:2px solid var(--bg)}
+    @media(max-width:720px){.action{grid-template-columns:1fr}.action .ctrl{min-width:0}}
+    .save-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--panel);
+      border-top:1px solid var(--border);padding:1rem 2rem;display:flex;gap:.5rem;align-items:center;
+      flex-wrap:wrap;box-shadow:0 -8px 24px rgba(0,0,0,.6)}
+    .save-bar .save-feedback{flex:1;min-height:1rem;font-size:.75rem;color:var(--muted)}
+    .save-bar .save-feedback .ok{color:var(--ok)} .save-bar .save-feedback .err{color:var(--err)}
+    .save-bar .save-feedback .warn{color:var(--warn)}
+    pre.out{margin:.5rem 0 0;padding:.7rem;background:var(--bg);border:1px solid var(--border);
+      border-radius:3px;max-height:300px;overflow:auto;font-size:.65rem;color:var(--text2);white-space:pre}
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Person Counter <span class="sep">/</span>
-      <span class="cam">{{ camera }}</span>
+  <h1>Person Counter <span class="sep">/</span> <span class="cam">{{ camera }}</span>
       <span class="sep">/</span><span class="crumb">Impostazioni</span></h1>
   <div class="actions">
     <a class="btn" href="/">← Dashboard</a>
@@ -208,195 +115,51 @@
   </div>
 </header>
 
-<div class="tabs-bar" role="tablist">
-  <button class="tab active" data-tab="camera"><span class="ico">▣</span> Camera</button>
-  <button class="tab" data-tab="detection"><span class="ico">⚙</span> Detection</button>
-  <button class="tab" data-tab="integrations"><span class="ico">⇄</span> Integrazioni</button>
-  <button class="tab" data-tab="system"><span class="ico">▤</span> Sistema</button>
+<div class="tabs-bar">
+  <button class="tab active" data-tab="integrations"><span>⇄</span> Integrazioni</button>
+  <button class="tab" data-tab="system"><span>▤</span> Sistema</button>
 </div>
 
 <form id="settings-form" onsubmit="return false">
 
-<!-- ============ TAB CAMERA ============ -->
-<section class="tab-panel active" data-panel="camera">
-  <div class="camera-split">
-    <div>
-      <div class="section-title">
-        <h2>Visualizzatore live</h2>
-        <span class="hint">box rilevati + trascina linea/ROI</span>
-      </div>
-      <div class="canvas-panel">
-        <div class="canvas-wrap {% if not rtsp_configured %}no-img{% endif %}" id="canvas-wrap">
-          <img id="snap" alt="" {% if not rtsp_configured %}style="display:none"{% endif %}>
-          <canvas id="overlay"></canvas>
-        </div>
-        <div class="canvas-toolbar">
-          <button class="btn" type="button" id="btn-refresh">↻ Aggiorna</button>
-          <button class="btn" type="button" id="btn-diag">Stato stream</button>
-          <label style="display:flex; align-items:center; gap:.4rem;
-                 color:var(--muted); font-size:.7rem; text-transform:uppercase">
-            <input type="checkbox" id="auto-refresh" checked>
-            Auto ({{ snapshot_refresh }}s)
-          </label>
-          <span class="refresh" id="refresh-meta"></span>
-          <div class="legend">
-            <span><span class="sw box"></span>Persona</span>
-            <span><span class="sw line"></span>Linea</span>
-            <span><span class="sw roi"></span>ROI</span>
-          </div>
-        </div>
-        <div id="snap-error" class="snap-error" style="display:none">
-          <div id="snap-error-msg" style="font-weight:500"></div>
-          <div id="snap-error-hint" style="color:#cc8888; margin-top:.4rem; font-size:.72rem"></div>
-          <pre class="out" id="snap-error-pre" style="display:none"></pre>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="section-title"><h2>Parametri conteggio</h2></div>
-      <div class="params-grid">
-        <div class="card">
-          <h3>Camera &amp; direzione</h3>
-          <div class="field">
-            <label>Nome camera <span class="desc">etichetta nei dati/MQTT</span></label>
-            <input class="text" type="text" name="CAMERA" autocomplete="off">
-          </div>
-          <div class="field">
-            <label>Direzione ingresso <span class="desc">verso in cui si muove chi ENTRA</span></label>
-            <select name="ENTER_DIRECTION">
-              <option value="up">su ↑</option>
-              <option value="down">giù ↓</option>
-              <option value="left">sinistra ←</option>
-              <option value="right">destra →</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Punto di tracking <span class="desc">bottom = piedi · center = box</span></label>
-            <select name="POINT_MODE"><option value="bottom">bottom</option><option value="center">center</option></select>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Linea di attraversamento</h3>
-          <div class="help line"><p>La <strong>linea gialla</strong> è la soglia
-            da attraversare. La banda (margine) è la "zona morta": chi non la
-            supera da un lato all'altro non conta.</p>
-            <p style="margin-top:.4rem"><strong>Orizzontale</strong> = conta su/giù ·
-            <strong>Verticale</strong> = conta sinistra/destra (es. ingresso da
-            una porta laterale). Imposta la <em>Direzione ingresso</em> coerente.</p></div>
-          <div class="field">
-            <label>Orientamento</label>
-            <select name="LINE_ORIENTATION">
-              <option value="horizontal">orizzontale (su/giù)</option>
-              <option value="vertical">verticale (sx/dx)</option>
-            </select>
-          </div>
-          <div class="field-range"><input type="range" name="LINE_Y" min="0" max="1" step="0.01"><input type="number" name="LINE_Y_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>LINE_Y <span class="desc">posizione linea orizzontale</span></label><span></span></div>
-          <div class="field-range"><input type="range" name="LINE_X" min="0" max="1" step="0.01"><input type="number" name="LINE_X_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>LINE_X <span class="desc">posizione linea verticale</span></label><span></span></div>
-          <div class="field-range"><input type="range" name="LINE_MARGIN" min="0" max="0.45" step="0.01"><input type="number" name="LINE_MARGIN_num" min="0" max="0.45" step="0.01"></div>
-          <div class="field"><label>LINE_MARGIN <span class="desc">zona morta</span></label><span></span></div>
-        </div>
-
-        <div class="card">
-          <h3>ROI</h3>
-          <div class="help roi"><p><strong>Region Of Interest</strong>: solo i
-            movimenti dentro il rettangolo azzurro contano. Restringila alla zona
-            della porta per ignorare passaggi sullo sfondo.</p></div>
-          <div class="field-range"><input type="range" name="MOTION_X1" min="0" max="1" step="0.01"><input type="number" name="MOTION_X1_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>MOTION_X1 <span class="desc">sinistra</span></label><span></span></div>
-          <div class="field-range"><input type="range" name="MOTION_X2" min="0" max="1" step="0.01"><input type="number" name="MOTION_X2_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>MOTION_X2 <span class="desc">destra</span></label><span></span></div>
-          <div class="field-range"><input type="range" name="MOTION_Y1" min="0" max="1" step="0.01"><input type="number" name="MOTION_Y1_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>MOTION_Y1 <span class="desc">alto</span></label><span></span></div>
-          <div class="field-range"><input type="range" name="MOTION_Y2" min="0" max="1" step="0.01"><input type="number" name="MOTION_Y2_num" min="0" max="1" step="0.01"></div>
-          <div class="field"><label>MOTION_Y2 <span class="desc">basso</span></label><span></span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ TAB DETECTION ============ -->
-<section class="tab-panel" data-panel="detection">
-  <div class="section-title"><h2>Detection &amp; tracking</h2>
-    <span class="hint">equilibrio accuratezza / carico CPU</span></div>
-
-  <div class="card">
-    <h3>Detection (YOLOv8n ONNX)</h3>
-    <div class="help"><p>Più <code>DETECT_FPS</code> = più reattivo ma più CPU.
-      Su un NUC tieni 6–10. <code>DETECT_CONF</code> alza per meno falsi positivi,
-      abbassa se perde persone. <code>ORT_THREADS</code> = core dedicati all'inferenza.</p></div>
-    <div class="field"><label>DETECT_FPS <span class="desc">detection al secondo</span></label><input type="number" name="DETECT_FPS" min="1" max="30" step="0.5"></div>
-    <div class="field"><label>DETECT_CONF <span class="desc">soglia confidenza</span></label><input type="number" name="DETECT_CONF" min="0.05" max="0.95" step="0.05"></div>
-    <div class="field"><label>DETECT_IOU_NMS <span class="desc">soppressione box sovrapposti</span></label><input type="number" name="DETECT_IOU_NMS" min="0.1" max="0.9" step="0.05"></div>
-    <div class="field"><label>MAX_DETECTIONS <span class="desc">persone max per frame</span></label><input type="number" name="MAX_DETECTIONS" min="1" max="200" step="1"></div>
-    <div class="field"><label>DETECT_INPUT_SIZE <span class="desc">lato rete (restart)</span></label><input type="number" name="DETECT_INPUT_SIZE" min="160" max="1280" step="32"></div>
-    <div class="field"><label>ORT_THREADS <span class="desc">0=auto (restart)</span></label><input type="number" name="ORT_THREADS" min="0" max="32" step="1"></div>
-    <div class="field"><label>MODEL_PATH <span class="desc">file .onnx (restart)</span></label><input class="text" type="text" name="MODEL_PATH"></div>
-  </div>
-
-  <div class="card">
-    <h3>Tracking (SORT) <span class="restart-tag">richiede restart</span></h3>
-    <div class="help"><p>Mantiene l'identità delle persone tra i frame.
-      <code>TRACK_MAX_AGE</code> = quanti frame tenere una persona "persa";
-      <code>TRACK_MIN_HITS</code> = frame minimi prima di confermarla (anti-flicker);
-      <code>TRACK_IOU</code> = quanto devono sovrapporsi i box per essere la stessa persona.</p></div>
-    <div class="field"><label>TRACK_MAX_AGE</label><input type="number" name="TRACK_MAX_AGE" min="1" max="120" step="1"></div>
-    <div class="field"><label>TRACK_MIN_HITS</label><input type="number" name="TRACK_MIN_HITS" min="1" max="20" step="1"></div>
-    <div class="field"><label>TRACK_IOU</label><input type="number" name="TRACK_IOU" min="0.05" max="0.9" step="0.05"></div>
-  </div>
-
-  <div class="card">
-    <h3>Overlay / snapshot</h3>
-    <div class="field"><label>DRAW_OVERLAY <span class="desc">disegna box/linea sullo snapshot</span></label>
-      <select name="DRAW_OVERLAY"><option value="true">sì</option><option value="false">no</option></select></div>
-    <div class="field"><label>JPEG_QUALITY</label><input type="number" name="JPEG_QUALITY" min="30" max="95" step="1"></div>
-    <div class="field"><label>SNAPSHOT_REFRESH_SEC <span class="desc">refresh UI</span></label><input type="number" name="SNAPSHOT_REFRESH_SEC" min="0.5" max="60" step="0.5"></div>
-  </div>
-</section>
-
-<!-- ============ TAB INTEGRAZIONI ============ -->
-<section class="tab-panel" data-panel="integrations">
+<!-- ============ INTEGRAZIONI ============ -->
+<section class="tab-panel active" data-panel="integrations">
   <div class="section-title"><h2>Sorgente &amp; integrazioni</h2></div>
 
   <div class="card">
-    <h3>Sorgente RTSP / RTSPS <span class="restart-tag">richiede restart</span></h3>
-    <div class="help"><p>URL dello stream della telecamera. Consigliato un
-      <strong>substream a bassa risoluzione</strong> (~640px) per non saturare la CPU.
-      Esempio: <code>rtsp://user:pass@ip:554/Streaming/Channels/102</code> oppure
-      <code>rtsps://...</code>.</p></div>
-    <div class="field"><label>RTSP_URL</label><input class="text" type="text" name="RTSP_URL" placeholder="rtsp://user:pass@ip:554/..." autocomplete="off"></div>
-    <div class="field"><label>RTSP_TRANSPORT <span class="desc">tcp consigliato</span></label>
-      <select name="RTSP_TRANSPORT"><option value="tcp">tcp</option><option value="udp">udp</option></select></div>
-    <div class="field"><label>CAPTURE_TIMEOUT_SEC <span class="desc">timeout lettura</span></label><input type="number" name="CAPTURE_TIMEOUT_SEC" min="1" max="30" step="1"></div>
-    <div class="field"><label>CAPTURE_RECONNECT_SEC <span class="desc">attesa riconnessione</span></label><input type="number" name="CAPTURE_RECONNECT_SEC" min="1" max="60" step="1"></div>
-    <div class="row-actions">
-      <button class="btn btn-mini" type="button" id="btn-stream-test">↻ Stato stream</button>
-      <span id="stream-msg" style="color:var(--dim); font-size:.7rem; align-self:center"></span>
+    <h3>Identificazione</h3>
+    <div class="field"><label>Nome camera/varco <span class="desc">etichetta nei dati e nel webhook</span></label>
+      <input class="text" type="text" name="CAMERA" autocomplete="off"></div>
+  </div>
+
+  <div class="card">
+    <h3>MQTT (ESP people counter)
+      <span class="tag {{ 'ok' if mqtt_connected else 'err' }}" id="mqtt-badge">{{ 'connesso' if mqtt_connected else 'non connesso' }}</span>
+      <span class="tag restart">richiede restart</span></h3>
+    <div class="help">
+      <p>L'app si sottoscrive al <strong>topic</strong> e a ogni messaggio decide se è un
+        <strong>enter</strong> o un <strong>exit</strong> in base ai <em>token</em>:
+        guarda prima l'ultimo segmento del topic, poi il payload (testo o JSON nei campi
+        <code>event/direction/type/...</code>).</p>
+      <p>Esempi che funzionano già: topic <code>.../enter</code> · payload <code>enter</code> ·
+        <code>in</code> · <code>{"event":"exit"}</code> · <code>{"direction":"out"}</code>.
+        Aggiungi i tuoi token se l'ESP usa parole diverse.</p>
     </div>
-  </div>
-
-  <div class="card">
-    <h3>MQTT output <span class="restart-tag">richiede restart</span></h3>
-    <div class="help"><p>Opzionale: pubblica i contatori su MQTT (retained) su
-      <code>&lt;base&gt;/&lt;camera&gt;/enter|exit|occupancy</code>. Utile per Home Assistant.</p></div>
-    <div class="field"><label>Abilitato</label>
-      <select name="MQTT_ENABLED"><option value="false">no</option><option value="true">sì</option></select></div>
-    <div class="field"><label>MQTT_HOST</label><input class="text" type="text" name="MQTT_HOST" autocomplete="off"></div>
+    <div class="field"><label>MQTT_HOST <span class="desc">broker (es. mosquitto)</span></label><input class="text" type="text" name="MQTT_HOST" autocomplete="off"></div>
     <div class="field"><label>MQTT_PORT</label><input type="number" name="MQTT_PORT" min="1" max="65535"></div>
-    <div class="field"><label>MQTT_USER <span class="desc">vuoto = no auth</span></label><input class="text" type="text" name="MQTT_USER" autocomplete="off"></div>
+    <div class="field"><label>MQTT_USER</label><input class="text" type="text" name="MQTT_USER" autocomplete="off"></div>
     <div class="field"><label>MQTT_PASS</label><input type="password" name="MQTT_PASS" autocomplete="new-password" placeholder="•••"></div>
-    <div class="field"><label>MQTT_BASE_TOPIC</label><input class="text" type="text" name="MQTT_BASE_TOPIC"></div>
+    <div class="field"><label>MQTT_TOPIC <span class="desc">anche wildcard + / #</span></label><input class="text" type="text" name="MQTT_TOPIC" autocomplete="off"></div>
+    <div class="field"><label>Token ENTER <span class="desc">CSV (es. enter,in,entrata)</span></label><input class="text" type="text" name="MQTT_ENTER_TOKENS" autocomplete="off"></div>
+    <div class="field"><label>Token EXIT <span class="desc">CSV (es. exit,out,uscita)</span></label><input class="text" type="text" name="MQTT_EXIT_TOKENS" autocomplete="off"></div>
+    <div id="mqtt-health" class="feedback"></div>
   </div>
 
   <div class="card">
-    <h3>PostgreSQL <span class="pg-badge" id="pg-status-badge">non connesso</span></h3>
-    <div class="help"><p>Storage esterno per lo storico. Vuoto = solo
-      <code>events.jsonl</code>. La tabella si crea da sola al primo connect se
-      l'utente ha permessi CREATE, oppure usa <strong>Mostra SQL</strong>.</p></div>
+    <h3>PostgreSQL <span class="tag" id="pg-badge">non connesso</span></h3>
+    <div class="help"><p>Storage esterno per lo storico (opzionale). Vuoto = solo
+      <code>events.jsonl</code>. La tabella si crea da sola al primo connect se l'utente
+      ha permessi CREATE, oppure usa <strong>Mostra SQL</strong>.</p></div>
     <div class="field"><label>DB_HOST</label><input class="text" type="text" name="DB_HOST" autocomplete="off"></div>
     <div class="field"><label>DB_PORT</label><input type="number" name="DB_PORT" min="1" max="65535"></div>
     <div class="field"><label>DB_NAME</label><input class="text" type="text" name="DB_NAME" autocomplete="off"></div>
@@ -419,34 +182,30 @@
 
   <div class="card">
     <h3>Webhook</h3>
-    <div class="help"><p>POST JSON ad ogni enter/exit (evento, camera, timestamp,
-      occupancy, totali, coordinate). Per Home Assistant, Node-RED, n8n, Slack…</p></div>
+    <div class="help"><p>POST JSON ad ogni enter/exit (evento, camera, timestamp, totali,
+      occupancy, topic). Per Home Assistant, Node-RED, n8n, Slack…</p></div>
     <div class="field"><label>Abilitato</label>
       <select name="WEBHOOK_ENABLED"><option value="false">no</option><option value="true">sì</option></select></div>
     <div class="field"><label>WEBHOOK_URL</label><input class="text" type="url" name="WEBHOOK_URL" placeholder="https://example.com/hook"></div>
     <div class="field full"><label>WEBHOOK_HEADERS <span class="desc">JSON header extra</span></label></div>
     <textarea name="WEBHOOK_HEADERS" rows="2" placeholder='{"Authorization":"Bearer xyz"}'
-      style="width:100%; background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); border-radius:3px; padding:.5rem .6rem;
-      font-family:inherit; font-size:.75rem; resize:vertical"></textarea>
+      style="width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);
+      border-radius:3px;padding:.5rem .6rem;font-family:inherit;font-size:.75rem;resize:vertical"></textarea>
     <div class="field"><label>WEBHOOK_TIMEOUT <span class="desc">secondi</span></label><input type="number" name="WEBHOOK_TIMEOUT" min="0.5" max="30" step="0.5"></div>
     <div class="field"><label>WEBHOOK_RETRY</label><input type="number" name="WEBHOOK_RETRY" min="0" max="5" step="1"></div>
-    <div class="row-actions">
-      <button class="btn btn-mini" type="button" id="btn-webhook-test">↻ Invia evento di test</button>
-    </div>
+    <div class="row-actions"><button class="btn btn-mini" type="button" id="btn-webhook-test">↻ Invia evento di test</button></div>
     <div id="webhook-feedback" class="feedback"></div>
   </div>
 </section>
 
-<!-- ============ TAB SISTEMA ============ -->
+<!-- ============ SISTEMA ============ -->
 <section class="tab-panel" data-panel="system">
   <div class="section-title"><h2>Stato</h2></div>
   <div class="status-grid">
     <div class="stat"><div class="lbl">Entrate cumulative</div><div class="val">{{ snapshot.enter }}</div></div>
     <div class="stat"><div class="lbl">Uscite cumulative</div><div class="val">{{ snapshot.exit }}</div></div>
     <div class="stat"><div class="lbl">Presenti ora</div><div class="val">{{ snapshot.occupancy }}</div></div>
-    <div class="stat"><div class="lbl">Stream</div><div class="val dim" id="sys-stream">—</div><div class="sub" id="sys-stream-sub"></div></div>
-    <div class="stat"><div class="lbl">Detection</div><div class="val dim" id="sys-detect">—</div><div class="sub" id="sys-detect-sub"></div></div>
+    <div class="stat"><div class="lbl">MQTT</div><div class="val dim" id="sys-mqtt">—</div><div class="sub" id="sys-mqtt-sub"></div></div>
     <div class="stat"><div class="lbl">Storage</div><div class="val">{{ 'POSTGRES' if postgres_enabled else 'JSON' }}</div>
       {% if stats.jsonl_size %}<div class="sub">jsonl: {{ "%.1f"|format(stats.jsonl_size/1024) }} KB</div>{% endif %}</div>
     <div class="stat"><div class="lbl">Eventi storici</div><div class="val">{{ stats.events_count or 0 }}</div><div class="sub">in {{ stats.days_count or 0 }} giorni</div></div>
@@ -455,30 +214,21 @@
 
   <div class="section-title"><h2>Reset</h2></div>
   <div class="action safe">
-    <div class="desc"><h4>Reset cumulativi</h4>
-      <p>Azzera <code>entrate</code>/<code>uscite</code>/<code>presenti</code>.
-      <strong>Lo storico resta intatto.</strong></p>
-      <small>Per ripartire da zero dopo la taratura.</small></div>
+    <div class="desc"><h4>Reset cumulativi</h4><p>Azzera entrate/uscite/presenti. <strong>Lo storico resta.</strong></p></div>
     <div class="ctrl"><button class="btn" type="button" id="btn-reset-counters">Azzera contatori</button></div>
   </div>
   <div class="action warn">
-    <div class="desc"><h4>Reset di un giorno</h4>
-      <p>Cancella gli eventi di un giorno (JSON + Postgres) e corregge i cumulativi.</p>
-      <small>Per togliere falsi positivi di una giornata.</small></div>
-    <div class="ctrl">
-      <input type="date" id="reset-day-input" value="{{ today_iso }}" max="{{ today_iso }}">
-      <button class="btn warn" type="button" id="btn-reset-day">Cancella giorno</button>
-    </div>
+    <div class="desc"><h4>Reset di un giorno</h4><p>Cancella gli eventi di un giorno (JSON + Postgres) e corregge i cumulativi.</p></div>
+    <div class="ctrl"><input type="date" id="reset-day-input" value="{{ today_iso }}" max="{{ today_iso }}">
+      <button class="btn warn" type="button" id="btn-reset-day">Cancella giorno</button></div>
   </div>
   <div class="action danger">
-    <div class="desc"><h4>Reset totale (wipe)</h4>
-      <p><strong>Cancella TUTTO</strong> lo storico + azzera i contatori. Irreversibile.</p>
-      <small>Solo dopo aver esportato i dati.</small></div>
+    <div class="desc"><h4>Reset totale (wipe)</h4><p><strong>Cancella TUTTO</strong> lo storico + azzera i contatori. Irreversibile.</p></div>
     <div class="ctrl"><button class="btn danger" type="button" id="btn-reset-all">Wipe totale</button></div>
   </div>
-  <div id="reset-feedback" class="feedback" style="font-size:.8rem; padding:1rem 1.25rem;
-    background:var(--panel2); border:1px solid var(--border-st);
-    border-left:3px solid var(--accent); border-radius:3px; margin-top:1.5rem"></div>
+  <div id="reset-feedback" class="feedback" style="font-size:.8rem;padding:1rem 1.25rem;
+    background:var(--panel2);border:1px solid var(--border-st);border-left:3px solid var(--accent);
+    border-radius:3px;margin-top:1.5rem"></div>
 </section>
 
 <div class="save-bar">
@@ -489,277 +239,104 @@
 </form>
 
 <script>
-  // ======= TAB =======
   const TAB_KEY='counter-settings-tab';
-  function activateTab(name){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));
-    try{localStorage.setItem(TAB_KEY,name)}catch(e){}
-    if(name==='camera') resizeCanvas();
-  }
+  function activateTab(n){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===n));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===n));
+    try{localStorage.setItem(TAB_KEY,n)}catch(e){}}
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.tab)));
   try{const s=localStorage.getItem(TAB_KEY); if(s) activateTab(s)}catch(e){}
 
-  // ======= STATO =======
   const initial={{ current|tojson }};
   let s=Object.assign({},initial);
-  const REFRESH_SEC={{ snapshot_refresh }};
-  const RTSP_OK={{ 'true' if rtsp_configured else 'false' }};
   const form=document.getElementById('settings-form');
+  function setForm(){for(const k of Object.keys(s)){const el=form.elements[k]; if(!el) continue;
+    if(el.type==='password' && s[k]==='***') el.value='';
+    else if(typeof s[k]==='boolean') el.value=s[k]?'true':'false';
+    else el.value=s[k];}}
+  function readForm(){for(const k of Object.keys(s)){const el=form.elements[k]; if(!el) continue;
+    let v=el.value; if(el.type==='password'&&v==='') v='***'; if(v==null) continue;
+    if(typeof initial[k]==='number'){const f=parseFloat(v); if(!isNaN(f)) s[k]=f;}
+    else if(typeof initial[k]==='boolean') s[k]=(v==='true'); else s[k]=v;}}
 
-  function setForm(){
-    for(const k of Object.keys(s)){
-      const el=form.elements[k];
-      if(el){
-        if(el.type==='password' && s[k]==='***') el.value='';
-        else if(typeof s[k]==='boolean') el.value = s[k] ? 'true':'false';
-        else el.value=s[k];
-        const num=form.elements[k+'_num']; if(num) num.value=s[k];
-      }
-    }
-    drawOverlay();
-  }
-  function readForm(){
-    for(const k of Object.keys(s)){
-      const el=form.elements[k]; if(!el) continue;
-      let v=el.value;
-      if(el.type==='password' && v==='') v='***';
-      if(v===null||v===undefined) continue;
-      if(typeof initial[k]==='number'){ const f=parseFloat(v); if(!isNaN(f)) s[k]=f; }
-      else if(typeof initial[k]==='boolean'){ s[k]=(v==='true'); }
-      else s[k]=v;
-    }
-  }
-  form.addEventListener('input',e=>{
-    const t=e.target; if(!t.name) return;
-    if(t.name.endsWith('_num')){ const b=form.elements[t.name.slice(0,-4)]; if(b) b.value=t.value; }
-    else { const n=form.elements[t.name+'_num']; if(n) n.value=t.value; }
-    readForm(); drawOverlay();
-  });
-
-  // ======= CANVAS overlay (linea+ROI trascinabili) =======
-  const wrap=document.getElementById('canvas-wrap');
-  const canvas=document.getElementById('overlay'); const ctx=canvas.getContext('2d');
-  function resizeCanvas(){
-    if(!wrap.offsetParent) return;
-    const r=wrap.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
-    canvas.width=r.width*dpr; canvas.height=r.height*dpr;
-    canvas.style.width=r.width+'px'; canvas.style.height=r.height+'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0); drawOverlay();
-  }
-  window.addEventListener('resize',resizeCanvas);
-  function drawOverlay(){
-    const w=canvas.clientWidth,h=canvas.clientHeight; if(!w||!h) return;
-    ctx.clearRect(0,0,w,h);
-    // ROI
-    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h;
-    ctx.fillStyle='rgba(79,195,247,.06)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
-    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
-    ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
-    ctx.fillStyle='#4fc3f7'; [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([x,y])=>ctx.fillRect(x-5,y-5,10,10));
-    // linea + zona morta
-    ctx.font='11px "Roboto Mono",monospace';
-    if(s.LINE_ORIENTATION==='vertical'){
-      const lx=s.LINE_X*w, ml=(s.LINE_X-s.LINE_MARGIN)*w, mr=(s.LINE_X+s.LINE_MARGIN)*w;
-      ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(ml,0,mr-ml,h);
-      ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,h); ctx.stroke();
-      ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
-      ctx.beginPath(); ctx.moveTo(ml,0); ctx.lineTo(ml,h); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(mr,0); ctx.lineTo(mr,h); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#ffeb3b'; ctx.fillRect(lx-4,h/2-25,8,50);
-      ctx.fillText('LINE X '+s.LINE_X.toFixed(2),lx+6,16);
-    } else {
-      const ly=s.LINE_Y*h, mt=(s.LINE_Y-s.LINE_MARGIN)*h, mb=(s.LINE_Y+s.LINE_MARGIN)*h;
-      ctx.fillStyle='rgba(255,235,59,.10)'; ctx.fillRect(0,mt,w,mb-mt);
-      ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(w,ly); ctx.stroke();
-      ctx.strokeStyle='rgba(255,235,59,.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
-      ctx.beginPath(); ctx.moveTo(0,mt); ctx.lineTo(w,mt); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0,mb); ctx.lineTo(w,mb); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#ffeb3b'; ctx.fillRect(w/2-25,ly-4,50,8);
-      ctx.fillText('LINE Y '+s.LINE_Y.toFixed(2),8,ly-6);
-    }
-  }
-  let drag=null;
-  function pick(px,py){
-    const w=canvas.clientWidth,h=canvas.clientHeight;
-    const x1=s.MOTION_X1*w,y1=s.MOTION_Y1*h,x2=s.MOTION_X2*w,y2=s.MOTION_Y2*h,H=10;
-    if(s.LINE_ORIENTATION==='vertical'){
-      if(Math.abs(px-s.LINE_X*w)<=6) return 'line';
-    } else {
-      if(Math.abs(py-s.LINE_Y*h)<=6) return 'line';
-    }
-    if(Math.abs(px-x1)<H&&Math.abs(py-y1)<H) return 'tl';
-    if(Math.abs(px-x2)<H&&Math.abs(py-y1)<H) return 'tr';
-    if(Math.abs(px-x1)<H&&Math.abs(py-y2)<H) return 'bl';
-    if(Math.abs(px-x2)<H&&Math.abs(py-y2)<H) return 'br';
-    if(Math.abs(px-x1)<H&&py>y1&&py<y2) return 'l';
-    if(Math.abs(px-x2)<H&&py>y1&&py<y2) return 'r';
-    if(Math.abs(py-y1)<H&&px>x1&&px<x2) return 't';
-    if(Math.abs(py-y2)<H&&px>x1&&px<x2) return 'b';
-    return null;
-  }
-  function pos(e){const r=canvas.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];}
-  const cl=v=>Math.max(0,Math.min(1,v));
-  canvas.addEventListener('mousedown',e=>{const[px,py]=pos(e); drag=pick(px,py);});
-  canvas.addEventListener('mousemove',e=>{
-    const[px,py]=pos(e);
-    if(!drag){const hh=pick(px,py);
-      const lc=(s.LINE_ORIENTATION==='vertical')?'ew-resize':'ns-resize';
-      canvas.style.cursor=hh?(hh==='line'?lc:'pointer'):'crosshair'; return;}
-    const w=canvas.clientWidth,h=canvas.clientHeight,nx=cl(px/w),ny=cl(py/h);
-    if(drag==='line'){ if(s.LINE_ORIENTATION==='vertical') s.LINE_X=nx; else s.LINE_Y=ny; }
-    else{
-      if(drag.includes('l')) s.MOTION_X1=Math.min(nx,s.MOTION_X2-0.05);
-      if(drag.includes('r')) s.MOTION_X2=Math.max(nx,s.MOTION_X1+0.05);
-      if(drag.includes('t')) s.MOTION_Y1=Math.min(ny,s.MOTION_Y2-0.05);
-      if(drag.includes('b')) s.MOTION_Y2=Math.max(ny,s.MOTION_Y1+0.05);
-    }
-    setForm();
-  });
-  window.addEventListener('mouseup',()=>drag=null);
-
-  // ======= SNAPSHOT =======
-  const img=document.getElementById('snap'), refreshMeta=document.getElementById('refresh-meta');
-  const autoCb=document.getElementById('auto-refresh'); let snapTimer=null;
-  const errBox=document.getElementById('snap-error'), errMsg=document.getElementById('snap-error-msg'),
-        errHint=document.getElementById('snap-error-hint'), errPre=document.getElementById('snap-error-pre');
-  function showErr(p,fb){
-    errBox.style.display='block';
-    if(p&&typeof p==='object'){ errMsg.textContent='✗ '+(p.error||'errore'); errHint.textContent=p.hint||'';
-      errPre.style.display='block'; errPre.textContent=JSON.stringify(p,null,2); }
-    else{ errMsg.textContent='✗ '+(fb||'errore'); errHint.textContent=''; errPre.style.display='none'; }
-  }
-  async function loadSnap(){
-    if(!RTSP_OK) return;
-    try{
-      const r=await fetch('/api/snapshot?_='+Date.now());
-      if(!r.ok){ let p=null; try{p=await r.json()}catch(e){} p?showErr(p):showErr(null,'HTTP '+r.status);
-        refreshMeta.textContent='✗ '+r.status; return; }
-      const blob=await r.blob(), old=img.src; img.src=URL.createObjectURL(blob);
-      if(old.startsWith('blob:')) URL.revokeObjectURL(old);
-      refreshMeta.textContent='ok '+new Date().toLocaleTimeString(); errBox.style.display='none';
-    }catch(e){ showErr(null,e.message); }
-  }
-  img.addEventListener('load',resizeCanvas);
-  function startAuto(){ if(snapTimer) clearInterval(snapTimer);
-    if(autoCb.checked&&RTSP_OK) snapTimer=setInterval(loadSnap,REFRESH_SEC*1000); }
-  autoCb.addEventListener('change',startAuto);
-  document.getElementById('btn-refresh').addEventListener('click',loadSnap);
-
-  async function loadHealth(){
-    try{
-      const r=await fetch('/api/health'); const d=await r.json();
-      document.getElementById('sys-stream').textContent=d.opened?'CONNESSO':'OFFLINE';
-      document.getElementById('sys-stream-sub').textContent=
-        (d.fps?d.fps+' fps cam':'')+(d.reconnects?' · '+d.reconnects+' reconn':'');
-      document.getElementById('sys-detect').textContent=
-        (d.model_loaded?(d.detect_ms+' ms'):'no modello');
-      document.getElementById('sys-detect-sub').textContent=
-        (d.proc_fps?d.proc_fps+' fps proc':'')+(d.detections!=null?' · '+d.detections+' pers':'');
-    }catch(e){}
-  }
-  document.getElementById('btn-diag').addEventListener('click',async()=>{
-    refreshMeta.textContent='controllo…';
-    try{ const r=await fetch('/api/snapshot/diag'); const d=await r.json();
-      showErr({error:d.ok?'stream OK':'stream non pronto',hint:d.hint,stats:d.stats}); refreshMeta.textContent='';
-    }catch(e){ showErr(null,e.message); }
-  });
-  document.getElementById('btn-stream-test').addEventListener('click',async()=>{
-    const m=document.getElementById('stream-msg'); m.textContent='controllo…';
-    try{ const r=await fetch('/api/snapshot/diag'); const d=await r.json();
-      m.textContent=(d.ok?'✓ ':'✗ ')+(d.hint||(d.stats.opened?'stream connesso':'stream offline'));
-    }catch(e){ m.textContent='✗ '+e.message; }
-  });
-
-  // ======= POSTGRES =======
-  const dbFb=document.getElementById('db-feedback'), pgBadge=document.getElementById('pg-status-badge');
-  function pgBadgeSet(ok){ pgBadge.textContent=ok?'connesso':'non connesso'; pgBadge.className='pg-badge '+(ok?'ok':'err'); }
-  document.getElementById('btn-db-test').addEventListener('click',async()=>{
-    readForm(); dbFb.innerHTML='<span style="color:var(--muted)">test…</span>';
-    try{
-      const body={DB_HOST:s.DB_HOST,DB_PORT:s.DB_PORT,DB_NAME:s.DB_NAME,DB_USER:s.DB_USER,
-        DB_PASS:form.elements['DB_PASS'].value||'***',DB_SCHEMA:s.DB_SCHEMA,DB_TABLE:s.DB_TABLE,DB_SSLMODE:s.DB_SSLMODE};
+  // ---- POSTGRES ----
+  const dbFb=document.getElementById('db-feedback'),pgBadge=document.getElementById('pg-badge');
+  function pgBadgeSet(ok){pgBadge.textContent=ok?'connesso':'non connesso';pgBadge.className='tag '+(ok?'ok':'err');}
+  document.getElementById('btn-db-test').addEventListener('click',async()=>{readForm();
+    dbFb.innerHTML='<span style="color:var(--muted)">test…</span>';
+    try{const body={DB_HOST:s.DB_HOST,DB_PORT:s.DB_PORT,DB_NAME:s.DB_NAME,DB_USER:s.DB_USER,
+      DB_PASS:form.elements['DB_PASS'].value||'***',DB_SCHEMA:s.DB_SCHEMA,DB_TABLE:s.DB_TABLE,DB_SSLMODE:s.DB_SSLMODE};
       const r=await fetch('/api/db/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const d=await r.json();
-      if(d.ok){ const tbl=d.table_exists?`<span class="ok">tabella ${d.table_full} presente</span>`
+      if(d.ok){const tbl=d.table_exists?`<span class="ok">tabella ${d.table_full} presente</span>`
         :`<span style="color:var(--warn)">tabella ${d.table_full} assente — creata al primo connect</span>`;
-        dbFb.innerHTML=`<span class="ok">✓ ${d.version}</span><br>${tbl}`; }
+        dbFb.innerHTML=`<span class="ok">✓ ${d.version}</span><br>${tbl}`;}
       else dbFb.innerHTML=`<span class="err">✗ ${d.error}</span>`;
-    }catch(e){ dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
-  });
+    }catch(e){dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`;}});
   document.getElementById('btn-db-sql').addEventListener('click',async()=>{
-    try{ const r=await fetch('/api/db/sql'); const d=await r.json();
+    try{const r=await fetch('/api/db/sql');const d=await r.json();
       const esc=d.sql.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
       dbFb.innerHTML=`<div style="margin-bottom:.4rem;color:var(--muted)">Esegui come utente con CREATE
         <button id="sqlcopy" class="btn btn-mini" style="margin-left:.4rem">copia</button></div><pre class="out">${esc}</pre>`;
       document.getElementById('sqlcopy').onclick=async()=>{try{await navigator.clipboard.writeText(d.sql);
         document.getElementById('sqlcopy').textContent='copiato ✓'}catch(e){}};
-    }catch(e){ dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
-  });
+    }catch(e){dbFb.innerHTML=`<span class="err">✗ ${e.message}</span>`;}});
 
-  // ======= WEBHOOK =======
+  // ---- WEBHOOK ----
   const whFb=document.getElementById('webhook-feedback');
-  document.getElementById('btn-webhook-test').addEventListener('click',async()=>{
-    readForm(); whFb.innerHTML='<span style="color:var(--muted)">salvataggio e test…</span>';
-    try{
-      await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
-      const r=await fetch('/api/webhook/test',{method:'POST'}); const d=await r.json();
+  document.getElementById('btn-webhook-test').addEventListener('click',async()=>{readForm();
+    whFb.innerHTML='<span style="color:var(--muted)">salvataggio e test…</span>';
+    try{await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
+      const r=await fetch('/api/webhook/test',{method:'POST'});const d=await r.json();
       if(d.ok) whFb.innerHTML=`<span class="ok">✓ ${d.status} da ${d.url}</span>`+
         (d.body_preview?`<pre class="out">${d.body_preview.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</pre>`:'');
       else whFb.innerHTML=`<span class="err">✗ ${d.error||'HTTP '+d.status}</span>`;
-    }catch(e){ whFb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
-  });
+    }catch(e){whFb.innerHTML=`<span class="err">✗ ${e.message}</span>`;}});
 
-  // ======= SAVE / CANCEL =======
+  // ---- SAVE / CANCEL ----
   const fb=document.getElementById('feedback');
-  document.getElementById('btn-cancel').addEventListener('click',()=>{ s=Object.assign({},initial); setForm(); fb.innerHTML='modifiche annullate'; });
-  document.getElementById('btn-save').addEventListener('click',async()=>{
-    readForm(); fb.innerHTML='<span>salvataggio…</span>';
-    try{
-      const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
+  document.getElementById('btn-cancel').addEventListener('click',()=>{s=Object.assign({},initial);setForm();fb.innerHTML='modifiche annullate';});
+  document.getElementById('btn-save').addEventListener('click',async()=>{readForm();fb.innerHTML='<span>salvataggio…</span>';
+    try{const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
       const d=await r.json();
-      if(r.ok&&d.ok){
-        let m=`<span class="ok">✓ salvato (${d.changed.length})</span>`;
+      if(r.ok&&d.ok){let m=`<span class="ok">✓ salvato (${d.changed.length})</span>`;
         if(d.postgres_reconnect) m+=d.postgres_reconnect.ok?' · <span class="ok">Postgres OK</span>':` · <span class="err">Postgres: ${d.postgres_reconnect.message}</span>`;
         if(d.restart_needed) m+=' · <span class="warn">⚠ alcuni parametri richiedono restart del container</span>';
-        fb.innerHTML=m; Object.assign(s,d.current); Object.assign(initial,d.current); setForm();
-        pgBadgeSet(d.postgres_reconnect?d.postgres_reconnect.ok:{{ 'true' if postgres_enabled else 'false' }});
-      } else fb.innerHTML=`<span class="err">✗ ${d.error||'errore'}</span>`;
-    }catch(e){ fb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
-  });
+        fb.innerHTML=m;Object.assign(s,d.current);Object.assign(initial,d.current);setForm();
+        pgBadgeSet(d.postgres_reconnect?d.postgres_reconnect.ok:{{ 'true' if postgres_enabled else 'false' }});}
+      else fb.innerHTML=`<span class="err">✗ ${d.error||'errore'}</span>`;
+    }catch(e){fb.innerHTML=`<span class="err">✗ ${e.message}</span>`;}});
 
-  // ======= RESET =======
+  // ---- RESET ----
   const rfb=document.getElementById('reset-feedback');
-  async function doReset(url,body,confirmMsg,label){
-    if(confirmMsg&&!confirm(confirmMsg)) return;
+  async function doReset(url,body,confirmMsg,label){if(confirmMsg&&!confirm(confirmMsg))return;
     rfb.innerHTML='<span>esecuzione…</span>';
-    try{ const o={method:'POST'}; if(body){o.headers={'Content-Type':'application/x-www-form-urlencoded'};o.body=body;}
-      const r=await fetch(url,o); const d=await r.json();
-      if(!r.ok||!d.ok){ rfb.innerHTML=`<span class="err">✗ ${d.error||('HTTP '+r.status)}</span>`; return; }
+    try{const o={method:'POST'};if(body){o.headers={'Content-Type':'application/x-www-form-urlencoded'};o.body=body;}
+      const r=await fetch(url,o);const d=await r.json();
+      if(!r.ok||!d.ok){rfb.innerHTML=`<span class="err">✗ ${d.error||('HTTP '+r.status)}</span>`;return;}
       let m=`✓ ${label}`;
       if(d.action==='reset-day') m+=` (${d.day}: -${d.deleted_enter} enter, -${d.deleted_exit} exit)`;
       else if(d.action==='reset-all') m+=` (${d.deleted_pg_rows} righe DB)`;
       m+=` · enter=${d.enter} exit=${d.exit} presenti=${d.occupancy}`;
-      rfb.innerHTML=`<span class="ok">${m}</span>`; setTimeout(()=>location.reload(),1500);
-    }catch(e){ rfb.innerHTML=`<span class="err">✗ ${e.message}</span>`; }
-  }
+      rfb.innerHTML=`<span class="ok">${m}</span>`;setTimeout(()=>location.reload(),1500);
+    }catch(e){rfb.innerHTML=`<span class="err">✗ ${e.message}</span>`;}}
   document.getElementById('btn-reset-counters').addEventListener('click',()=>doReset('/api/admin/reset-counters',null,'Azzerare i contatori? (storico resta)','contatori azzerati'));
-  document.getElementById('btn-reset-day').addEventListener('click',()=>{
-    const day=document.getElementById('reset-day-input').value; if(!day){alert('Seleziona un giorno');return;}
-    doReset('/api/admin/reset-day','day='+encodeURIComponent(day),`Cancellare gli eventi del ${day}?`,'giorno cancellato');
-  });
-  document.getElementById('btn-reset-all').addEventListener('click',()=>{
-    if(!confirm('⚠ Cancella TUTTO lo storico e azzera i contatori.')) return;
-    if(!confirm('Sei davvero sicuro? IRREVERSIBILE.')) return;
-    doReset('/api/admin/reset-all',null,null,'wipe completato');
-  });
+  document.getElementById('btn-reset-day').addEventListener('click',()=>{const day=document.getElementById('reset-day-input').value;
+    if(!day){alert('Seleziona un giorno');return;} doReset('/api/admin/reset-day','day='+encodeURIComponent(day),`Cancellare gli eventi del ${day}?`,'giorno cancellato');});
+  document.getElementById('btn-reset-all').addEventListener('click',()=>{if(!confirm('⚠ Cancella TUTTO lo storico e azzera i contatori.'))return;
+    if(!confirm('Sei davvero sicuro? IRREVERSIBILE.'))return; doReset('/api/admin/reset-all',null,null,'wipe completato');});
 
-  // ======= BOOT =======
-  setForm(); resizeCanvas(); pgBadgeSet({{ 'true' if postgres_enabled else 'false' }});
-  if(RTSP_OK){ loadSnap(); startAuto(); }
-  loadHealth(); setInterval(loadHealth, 3000);
+  // ---- HEALTH MQTT ----
+  async function loadHealth(){try{const r=await fetch('/api/health');const d=await r.json();
+    const b=document.getElementById('mqtt-badge'); b.textContent=d.connected?'connesso':'non connesso'; b.className='tag '+(d.connected?'ok':'err');
+    document.getElementById('sys-mqtt').textContent=d.connected?'CONNESSO':'OFFLINE';
+    document.getElementById('sys-mqtt-sub').textContent=`${d.messages} msg · ${d.ignored} ignorati`;
+    const mh=document.getElementById('mqtt-health');
+    mh.innerHTML=`broker ${d.host} · topic <code>${d.topic}</code> · ${d.messages} messaggi ricevuti`+
+      (d.last_topic?` · ultimo: <code>${d.last_topic}</code>`:'')+
+      (d.ignored?` · <span style="color:var(--warn)">${d.ignored} non riconosciuti (controlla i token)</span>`:'');
+  }catch(e){}}
+
+  setForm(); pgBadgeSet({{ 'true' if postgres_enabled else 'false' }}); loadHealth(); setInterval(loadHealth,3000);
 </script>
 </body>
 </html>

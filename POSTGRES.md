@@ -46,7 +46,7 @@ CREATE TABLE counter_events (
     camera          TEXT         NOT NULL,
     ts              TIMESTAMPTZ  NOT NULL,                  -- istante conteggio
     event_type      TEXT         NOT NULL CHECK (event_type IN ('enter','exit')),
-    method          TEXT,                                   -- es. 'yolo_line'
+    method          TEXT,                                   -- es. 'mqtt'
     start_x         REAL,                                   -- coordinate 0..1
     start_y         REAL,
     end_x           REAL,

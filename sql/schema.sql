@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS counter_events (
     ts              TIMESTAMPTZ  NOT NULL,                    -- istante conteggio
     event_type      TEXT         NOT NULL
                                   CHECK (event_type IN ('enter','exit')),
-    method          TEXT,                                     -- es. 'yolo_line'
+    method          TEXT,                                     -- es. 'mqtt'
 
     -- punto iniziale e finale del bounding box (normalizzati 0..1)
     start_x         REAL,

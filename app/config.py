@@ -1,4 +1,4 @@
-"""Configurazioni leggibili da variabili d'ambiente Docker.
+"""Configurazioni da variabili d'ambiente Docker.
 
 I default qui sono la base; vengono sovrascritti a runtime da settings.json
 (modificabile dalla pagina Impostazioni).
@@ -9,59 +9,21 @@ import secrets
 
 
 class Config:
-    # ============ Sorgente video RTSP / RTSPS ============
-    RTSP_URL = os.environ.get("RTSP_URL", "").strip()
-    RTSP_TRANSPORT = os.environ.get("RTSP_TRANSPORT", "tcp").lower()   # tcp | udp
-    CAPTURE_RECONNECT_SEC = float(os.environ.get("CAPTURE_RECONNECT_SEC", "3"))
-    CAPTURE_TIMEOUT_SEC = float(os.environ.get("CAPTURE_TIMEOUT_SEC", "5"))
-
-    # ============ Detection (YOLOv8n ONNX, solo CPU) ============
-    MODEL_PATH = os.environ.get("MODEL_PATH", "/models/model.onnx")
-    DETECT_FPS = float(os.environ.get("DETECT_FPS", "10"))
-    DETECT_INPUT_SIZE = int(os.environ.get("DETECT_INPUT_SIZE", "640"))
-    # vista dall'alto/fisheye/IR: soglia bassa per rilevare prima
-    DETECT_CONF = float(os.environ.get("DETECT_CONF", "0.25"))
-    DETECT_IOU_NMS = float(os.environ.get("DETECT_IOU_NMS", "0.5"))
-    PERSON_CLASS_ID = int(os.environ.get("PERSON_CLASS_ID", "0"))
-    MAX_DETECTIONS = int(os.environ.get("MAX_DETECTIONS", "50"))
-    ORT_THREADS = int(os.environ.get("ORT_THREADS", "0"))             # 0 = auto
-
-    # ============ Tracking (SORT) ============
-    TRACK_MAX_AGE = int(os.environ.get("TRACK_MAX_AGE", "15"))
-    # min_hits basso = conferma rapida = conta anche i transiti veloci
-    TRACK_MIN_HITS = int(os.environ.get("TRACK_MIN_HITS", "2"))
-    TRACK_IOU = float(os.environ.get("TRACK_IOU", "0.3"))
-
-    # ============ Camera (solo etichetta) ============
+    # ============ Etichetta ============
     CAMERA = os.environ.get("CAMERA_NAME", "ingresso")
 
-    # ============ Conteggio (linea + ROI) ============
-    ENTER_DIRECTION = os.environ.get("ENTER_DIRECTION", "up").lower()  # up | down
-    POINT_MODE = os.environ.get("POINT_MODE", "bottom").lower()        # bottom | center
-    # horizontal = linea orizzontale, conta su/giù (LINE_Y)
-    # vertical   = linea verticale, conta sinistra/destra (LINE_X)
-    LINE_ORIENTATION = os.environ.get("LINE_ORIENTATION", "horizontal").lower()
-    LINE_Y = float(os.environ.get("LINE_Y", "0.50"))
-    LINE_X = float(os.environ.get("LINE_X", "0.50"))
-    LINE_MARGIN = float(os.environ.get("LINE_MARGIN", "0.08"))
-    MOTION_X1 = float(os.environ.get("MOTION_X1", "0.05"))
-    MOTION_X2 = float(os.environ.get("MOTION_X2", "0.95"))
-    MOTION_Y1 = float(os.environ.get("MOTION_Y1", "0.05"))
-    MOTION_Y2 = float(os.environ.get("MOTION_Y2", "0.95"))
-
-    # ============ Overlay / snapshot ============
-    DRAW_OVERLAY = os.environ.get("DRAW_OVERLAY", "1") == "1"
-    JPEG_QUALITY = int(os.environ.get("JPEG_QUALITY", "75"))
-    SNAPSHOT_REFRESH_SEC = float(os.environ.get("SNAPSHOT_REFRESH_SEC", "2"))
-    DEBUG = os.environ.get("DEBUG", "1") == "1"
-
-    # ============ MQTT output (opzionale) ============
-    MQTT_ENABLED = os.environ.get("MQTT_ENABLED", "0") == "1"
-    MQTT_HOST = os.environ.get("MQTT_HOST", "127.0.0.1")
+    # ============ MQTT input (sorgente eventi enter/exit dall'ESP) ============
+    MQTT_HOST = os.environ.get("MQTT_HOST", "mosquitto")
     MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
     MQTT_USER = os.environ.get("MQTT_USER", "")
     MQTT_PASS = os.environ.get("MQTT_PASS", "")
-    MQTT_BASE_TOPIC = os.environ.get("MQTT_BASE_TOPIC", "counter")
+    # topic (anche wildcard +/#) da sottoscrivere
+    MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "people_counter/#")
+    # token (CSV) per riconoscere enter/exit nel topic o nel payload
+    MQTT_ENTER_TOKENS = os.environ.get("MQTT_ENTER_TOKENS", "enter,in,entrata")
+    MQTT_EXIT_TOKENS = os.environ.get("MQTT_EXIT_TOKENS", "exit,out,uscita")
+
+    DEBUG = os.environ.get("DEBUG", "1") == "1"
 
     # ============ Webhook (POST ad ogni enter/exit) ============
     WEBHOOK_ENABLED = os.environ.get("WEBHOOK_ENABLED", "0") == "1"
@@ -102,7 +64,3 @@ class Config:
     @classmethod
     def auth_enabled(cls) -> bool:
         return bool(cls.AUTH_USER and cls.AUTH_PASS)
-
-    @classmethod
-    def rtsp_configured(cls) -> bool:
-        return bool(cls.RTSP_URL)

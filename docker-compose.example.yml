@@ -1,16 +1,30 @@
 services:
+  # ===== Broker MQTT (l'ESP people counter pubblica qui) =====
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: person-counter-mqtt
+    restart: unless-stopped
+    environment:
+      MQTT_USER: "espuser"
+      MQTT_PASS: "esp-cambia-questa-password"
+    # crea il file password dalle credenziali, poi avvia il broker
+    command:
+      - sh
+      - -c
+      - |
+        rm -f /mosquitto/config/pwfile
+        mosquitto_passwd -c -b /mosquitto/config/pwfile "$$MQTT_USER" "$$MQTT_PASS"
+        chown mosquitto:mosquitto /mosquitto/config/pwfile
+        chmod 600 /mosquitto/config/pwfile
+        exec mosquitto -c /mosquitto/config/mosquitto.conf
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "1883:1883"        # esponi il broker all'ESP sulla rete locale
+
+  # ===== App: subscriber MQTT + dashboard =====
   counter:
-    build:
-      context: .
-      args:
-        # === Scelta del modello (build-time) ===
-        # CONSIGLIATO per camera a soffitto / fisheye: head-detector (1 classe "head",
-        # addestrato su SCUT-HEAD) — molto meglio delle "persone" COCO viste dall'alto.
-        MODEL_URL: "https://raw.githubusercontent.com/Abcfsa/YOLOv8_head_detector/main/nano.pt"
-        # più accurato ma più lento: .../main/medium.pt
-        #
-        # Per vista frontale/laterale lascia vuoto MODEL_URL e usa COCO:
-        # YOLO_MODEL: yolov8n.pt     # o yolov8s.pt (più accurato)
+    build: .
     image: person-counter:latest
     container_name: person-counter
     restart: unless-stopped
@@ -18,57 +32,26 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/data
-      # opzionale: monta un modello ONNX tuo (altrimenti usa quello in /models)
-      # - ./models:/models
     environment:
-      # fuso orario per gli orari di log/eventi/dashboard
       TZ: "Europe/Rome"
-
-      # ===== Sorgente video RTSP / RTSPS (substream a bassa risoluzione) =====
-      RTSP_URL: "rtsp://user:pass@192.168.1.50:554/Streaming/Channels/102"
-      RTSP_TRANSPORT: "tcp"          # tcp (consigliato) | udp
-      CAPTURE_TIMEOUT_SEC: "5"
-      CAPTURE_RECONNECT_SEC: "3"
-
-      # ===== Detection YOLOv8n (CPU) =====
-      MODEL_PATH: "/models/model.onnx"
-      DETECT_FPS: "10"              # detection al secondo (alza/abbassa per CPU)
-      DETECT_CONF: "0.25"           # soglia confidenza (bassa = rileva prima)
-      DETECT_INPUT_SIZE: "640"
-      DETECT_IOU_NMS: "0.5"
-      ORT_THREADS: "4"             # core per l'inferenza (NUC: numero di core fisici)
-
-      # ===== Tracking (SORT) =====
-      TRACK_MAX_AGE: "15"
-      TRACK_MIN_HITS: "2"          # basso = conta anche transiti veloci
-      TRACK_IOU: "0.3"
-
-      # ===== Conteggio (linea + ROI) =====
       CAMERA_NAME: "ingresso"
-      ENTER_DIRECTION: "up"         # up = entra dal basso verso l'alto
-      POINT_MODE: "center"          # vista dall'alto/head-detector: center (centro testa)
-      LINE_Y: "0.50"
-      LINE_MARGIN: "0.08"
-      MOTION_X1: "0.05"
-      MOTION_X2: "0.95"
-      MOTION_Y1: "0.05"
-      MOTION_Y2: "0.95"
 
-      # ===== Overlay snapshot =====
-      DRAW_OVERLAY: "1"
-      JPEG_QUALITY: "75"
-      SNAPSHOT_REFRESH_SEC: "2"
+      # ---- MQTT input (STESSE credenziali del broker) ----
+      MQTT_HOST: "mosquitto"
+      MQTT_PORT: "1883"
+      MQTT_USER: "espuser"
+      MQTT_PASS: "esp-cambia-questa-password"
+      MQTT_TOPIC: "people_counter/#"          # adatta al topic del tuo ESP
+      MQTT_ENTER_TOKENS: "enter,in,entrata"   # parole che indicano un ingresso
+      MQTT_EXIT_TOKENS: "exit,out,uscita"     # parole che indicano un'uscita
 
-      # ===== Storage (JSON sempre attivo) =====
-      LOG_DIR: "/data"
-
-      # ===== Auth (vuote = dashboard pubblica) =====
+      # ---- Auth dashboard (vuote = pubblica) ----
       AUTH_USER: "admin"
       AUTH_PASS: "cambia-questa-password"
       SECRET_KEY: "metti-qui-una-stringa-random-lunga"
       SESSION_DAYS: "7"
 
-      # ===== PostgreSQL (vuote = solo JSON) =====
+      # ---- PostgreSQL (vuote = solo JSON) ----
       DB_HOST: "postgres"
       DB_PORT: "5432"
       DB_NAME: "person_counter"
@@ -78,26 +61,14 @@ services:
       DB_TABLE: "counter_events"
       DB_SSLMODE: "prefer"
 
-      # ===== MQTT OUTPUT opzionale (pubblica i contatori) =====
-      MQTT_ENABLED: "0"
-      MQTT_HOST: "192.168.1.10"
-      MQTT_PORT: "1883"
-      MQTT_USER: ""
-      MQTT_PASS: ""
-      MQTT_BASE_TOPIC: "counter"
-
-      # ===== Webhook opzionale (POST ad ogni enter/exit) =====
+      # ---- Webhook opzionale ----
       WEBHOOK_ENABLED: "0"
       WEBHOOK_URL: ""
       WEBHOOK_HEADERS: ""
       WEBHOOK_TIMEOUT: "4"
       WEBHOOK_RETRY: "1"
-    # Detection su CPU: opzionale limita i core per non saturare l'host
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "2.0"
     depends_on:
+      - mosquitto
       - postgres
 
   postgres:

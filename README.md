@@ -1,141 +1,116 @@
-# Person Counter — RTSP + YOLOv8 (CPU)
+# Person Counter — MQTT (ESP people counter)
 
-Conteggio direzionale di persone **autonomo**: apre direttamente lo stream
-**RTSP/RTSPS** della telecamera, rileva le persone con **YOLOv8n** (ONNX
-Runtime, solo CPU), le traccia con **SORT** e conta gli attraversamenti di una
-linea configurabile. Non richiede Frigate né altri NVR.
+Conteggio persone alimentato da **eventi MQTT**: un dispositivo **ESP** (people
+counter) pubblica gli eventi `enter`/`exit` su un broker MQTT, e questa app li
+consuma, tiene i contatori e li mostra in una dashboard web con storico.
 
-- Funziona su **CPU** (mini-PC / NUC x86): detection a FPS ridotto + tracking
-- Dashboard web: totali live, grafico orario, navigazione tra i giorni
-- Pagina **Impostazioni** con **snapshot live** della camera (box disegnati) per
-  tarare graficamente linea e ROI trascinandole
+Lo stack include un **broker Mosquitto** (con autenticazione) già pronto: l'ESP
+pubblica lì, l'app si sottoscrive.
+
+- Niente più telecamere/AI: sorgente = **MQTT**, leggerissimo
+- Dashboard: totali live, grafico orario, navigazione tra i giorni
 - Storage **JSON locale** + **PostgreSQL** opzionale
-- **Webhook** (POST ad ogni enter/exit) e **MQTT output** opzionali
+- **Webhook** (POST ad ogni enter/exit) opzionale
 - Auth opzionale (login form + HTTP Basic per le API)
+- **Parser tollerante**: riconosce enter/exit dal topic o dal payload (testo o
+  JSON), con token configurabili → funziona con firmware ESP diversi
 
 ---
 
-## Come funziona
+## Architettura
 
 ```
- RTSP/RTSPS ──► cattura ──► YOLOv8n (ONNX, CPU) ──► SORT (Kalman+IoU)
-   stream      (thread)        detection persona      tracking identità
-                                                            │
-                                                            ▼
-                                              attraversamento linea + ROI
-                                                            │
-                              ┌─────────────┬───────────────┼───────────────┐
-                              ▼             ▼               ▼               ▼
-                         counts.json   events.jsonl     Postgres        webhook
-                                                                        + MQTT
+  ESP people counter  ──MQTT──►  Mosquitto (broker, auth)  ──►  app (subscriber)
+   pubblica enter/exit            incluso nello stack              │
+                                                                   ▼
+                                                    contatori (enter/exit/presenti)
+                                                                   │
+                                   ┌───────────────┬───────────────┼──────────────┐
+                                   ▼               ▼               ▼              ▼
+                              counts.json     events.jsonl     Postgres        webhook
+                                                                              dashboard
 ```
-
-1. Un thread legge lo stream e tiene solo l'ultimo frame (no latenza accumulata)
-2. A `DETECT_FPS` fotogrammi/sec il detector trova le persone (box + confidenza)
-3. SORT mantiene l'identità di ogni persona tra un frame e l'altro
-4. Per ogni persona si segue da che lato della **linea** sta: quando attraversa
-   da una zona all'altra (superando il **margine**) dentro la **ROI**, conta
-   `enter` o `exit` secondo `ENTER_DIRECTION`
-5. L'evento viene salvato (JSON + Postgres), pubblicato su MQTT e inviato al webhook
-
-La macchina a stati per-persona conta **solo gli attraversamenti completi**: chi
-staziona davanti alla porta o va avanti/indietro nella zona morta non viene contato.
 
 ---
 
-## Quick start (Docker Compose)
+## Quick start
 
 ```bash
 cp docker-compose.example.yml docker-compose.yml
-# modifica RTSP_URL (substream consigliato), AUTH_*, e gli altri parametri
-docker compose up -d --build       # il build esporta yolov8n.onnx (richiede ~qualche minuto)
+# modifica le credenziali: MQTT_USER/MQTT_PASS (broker), AUTH_USER/AUTH_PASS (dashboard)
+docker compose up -d --build
 ```
 
-Apri **http://localhost:8080**, fai login, vai in **Impostazioni → Camera**:
+- Dashboard: **http://localhost:8080** (login con `AUTH_USER`/`AUTH_PASS`)
+- Broker MQTT per l'ESP: **`<ip-host>:1883`**, utente/password = `MQTT_USER`/`MQTT_PASS`
 
-1. Vedi lo snapshot live con i box delle persone rilevate
-2. Trascina la **linea gialla** sulla soglia fisica della porta
-3. Restringi il **rettangolo azzurro (ROI)** alla zona utile
-4. **Salva** — il conteggio parte subito
-
-> Il modello `yolov8n.onnx` viene esportato automaticamente durante il build
-> Docker (stage `model-builder`, usa ultralytics+torch SOLO in build). L'immagine
-> runtime resta leggera (~400 MB, niente PyTorch). Puoi anche montare un tuo
-> `.onnx` in `/models` e puntarlo con `MODEL_PATH`.
+Configura l'ESP per pubblicare su un topic sotto quello sottoscritto (default
+`people_counter/#`), es. `people_counter/ingresso/enter`.
 
 ---
 
-## Requisiti hardware
+## Formato MQTT accettato
 
-Pensato per **CPU x86** (mini-PC / NUC). Indicazioni:
+L'app per ogni messaggio decide **enter** o **exit** guardando, in ordine:
 
-| Hardware | DETECT_FPS consigliato | Note |
-|---|---|---|
-| NUC / mini-PC i3-i5 | 8–12 | ottimo, 1-2 core per l'inferenza |
-| Server multi-core | 10–15 | si può alzare input size |
-| Raspberry Pi 4/5 | 3–6 | possibile ma al limite; usa substream piccolo |
+1. **l'ultimo segmento del topic** — es. `people_counter/ingresso/enter` → enter
+2. **il payload come testo** — es. `enter`, `in`, `uscita`
+3. **il payload JSON** — nei campi `event`, `direction`, `type`, `action`,
+   `state`, `dir` — es. `{"event":"exit"}`, `{"direction":"in"}`
 
-Usa **`ORT_THREADS`** per limitare i core dedicati all'inferenza, e
-**`DETECT_FPS`** per bilanciare reattività e carico. Conviene puntare il
-container a un **substream a bassa risoluzione** (~640px) della telecamera.
+Le parole riconosciute sono configurabili (token CSV):
 
----
+| Parametro | Default |
+|---|---|
+| `MQTT_ENTER_TOKENS` | `enter,in,entrata` |
+| `MQTT_EXIT_TOKENS` | `exit,out,uscita` |
 
-## Vista dall'alto / fisheye (camere a soffitto)
+Se l'ESP usa parole diverse (es. `IN`/`OUT`, `1`/`0`), aggiungile ai token
+dalle Impostazioni — niente modifiche al codice. La pagina Impostazioni mostra
+quanti messaggi sono arrivati e quanti **non riconosciuti** (per tarare i token).
 
-YOLOv8n-COCO rileva male le persone **viste dall'alto** (testa+spalle scorciate),
-specie di notte in IR. Per questi setup usa un **head-detector** (rileva le teste,
-ben visibili dall'alto) passandolo come build-arg:
-
-```bash
-docker compose build --build-arg \
-  MODEL_URL=https://raw.githubusercontent.com/Abcfsa/YOLOv8_head_detector/main/nano.pt
-docker compose up -d
+Esempi che funzionano subito:
+```
+topic: people_counter/ingresso/enter   payload: (qualsiasi)
+topic: people_counter/varco            payload: out
+topic: esp/people                      payload: {"direction":"in"}   (se MQTT_TOPIC li copre)
 ```
 
-- `nano.pt` (6 MB, veloce) o `medium.pt` (52 MB, più accurato) — 1 classe "head"
-- Imposta `POINT_MODE=center` (si traccia il centro della testa)
-- Il modello a 1 classe è gestito automaticamente (`PERSON_CLASS_ID=0`)
-
-> Modello di [Abcfsa/YOLOv8_head_detector](https://github.com/Abcfsa/YOLOv8_head_detector)
-> (addestrato su SCUT-HEAD). Verifica la licenza per l'uso che ne fai.
+---
 
 ## Struttura del progetto
 
 ```
 .
-├── Dockerfile                    # multi-stage: esporta onnx + runtime leggero
-├── docker-compose.example.yml
-├── requirements.txt              # opencv-headless, onnxruntime, numpy, flask, psycopg2, paho
+├── Dockerfile                    # immagine leggera (flask + paho + psycopg2)
+├── docker-compose.example.yml    # mosquitto + counter + postgres
+├── mosquitto/mosquitto.conf      # config broker (auth)
+├── requirements.txt
 ├── main.py                       # entrypoint
-├── sql/schema.sql                # schema Postgres (vedi POSTGRES.md)
+├── sql/schema.sql                # schema Postgres
 ├── app/
 │   ├── config.py                 # default da env
 │   ├── settings.py               # override runtime (settings.json) + UI
-│   ├── capture.py                # cattura RTSP con riconnessione
-│   ├── detector.py               # YOLOv8n ONNX (CPU)
-│   ├── sort.py                   # tracker SORT (Kalman + IoU)
-│   ├── counting.py               # macchina a stati attraversamento linea
-│   ├── pipeline.py               # orchestratore cattura→detect→track→conteggio
+│   ├── mqtt_in.py                # subscriber MQTT + parser enter/exit
 │   ├── storage.py                # JSON + Postgres
 │   ├── webhook.py                # POST async ad ogni enter/exit
-│   ├── mqtt_out.py               # pubblicazione MQTT opzionale
 │   ├── auth.py                   # login form + HTTP Basic
 │   ├── web.py                    # Flask app + API
 │   └── templates/                # login, dashboard, settings
-├── README.md  ·  CONFIG.md  ·  POSTGRES.md
+├── README.md · CONFIG.md · POSTGRES.md
 ```
 
 ## File a runtime in `/data`
-
 - `counts.json` — contatori cumulativi
-- `events.jsonl` — log eventi (1 per riga)
-- `settings.json` — **tutta** la configurazione modificata da UI (per migrare:
-  copia la cartella `/data`)
+- `events.jsonl` — log eventi
+- `settings.json` — configurazione modificata da UI
+
+> ⚠️ Se aggiorni da una versione precedente (a telecamera), **cancella il vecchio
+> `data/settings.json`**: conteneva parametri di un'altra architettura che
+> sovrascriverebbero la config MQTT.
 
 ---
 
 ## Documentazione
-
-- **[CONFIG.md](CONFIG.md)** — tutti i parametri (env + UI), payload webhook, API
-- **[POSTGRES.md](POSTGRES.md)** — schema tabella, setup DB, query, troubleshooting
+- **[CONFIG.md](CONFIG.md)** — parametri (env + UI), payload webhook, API
+- **[POSTGRES.md](POSTGRES.md)** — schema tabella, setup DB, query
