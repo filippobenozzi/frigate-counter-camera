@@ -27,6 +27,8 @@ EDITABLE = {
     "MQTT_TOPIC":        {"type": "str",    "group": "mqtt", "restart_needed": True},
     "MQTT_ENTER_TOKENS": {"type": "str",    "group": "mqtt"},
     "MQTT_EXIT_TOKENS":  {"type": "str",    "group": "mqtt"},
+    "MQTT_PASS_TOKENS":  {"type": "str",    "group": "mqtt"},
+    "PASSAGE_MODE":      {"type": "str",    "group": "mqtt"},
 
     # ===== PostgreSQL =====
     "DB_HOST":           {"type": "str",    "group": "postgres"},
@@ -47,6 +49,7 @@ EDITABLE = {
 }
 
 _VALID_SSLMODE = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
+_VALID_PASSAGE = {"alternate", "enter", "exit"}
 SECRET_MASK = "***"
 
 
@@ -59,6 +62,10 @@ def _coerce(key, raw):
             v = v.lower()
             if v and v not in _VALID_SSLMODE:
                 raise ValueError(f"deve essere uno tra {sorted(_VALID_SSLMODE)}")
+        elif key == "PASSAGE_MODE":
+            v = v.lower()
+            if v and v not in _VALID_PASSAGE:
+                raise ValueError(f"deve essere uno tra {sorted(_VALID_PASSAGE)}")
         if typ == "url" and v:
             if not (v.startswith("http://") or v.startswith("https://")):
                 raise ValueError("deve iniziare con http:// o https://")

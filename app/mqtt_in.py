@@ -23,6 +23,10 @@ from app import webhook
 from app.config import Config
 
 
+# suffissi di telemetria dell'ESP: non sono eventi, non contarli tra gli "ignorati"
+_TELEMETRY = {"count", "distance", "availability", "status", "rssi", "uptime"}
+
+
 def _tokens(csv):
     return {t.strip().lower() for t in csv.split(",") if t.strip()}
 
@@ -40,7 +44,9 @@ class MqttIn:
         self.last_topic = None
         self.messages = 0
         self.ignored = 0
+        self.passages = 0
         self._seq = 0
+        self._toggle = True        # alternate: True -> prossimo passaggio = enter
 
     # ---------------- avvio ----------------
 
@@ -96,35 +102,61 @@ class MqttIn:
         except Exception:
             payload = ""
 
-        event = self._classify(topic, payload)
+        kind = self._classify(topic, payload)     # enter | exit | pass | None
+        if kind == "pass":
+            self.passages += 1
+            event = self._passage_dir()
+        else:
+            event = kind
+
         if Config.DEBUG:
-            print(f"[mqtt-in] {topic} = {payload!r} -> {event or 'ignorato'}",
+            extra = f" -> {event}" if kind == "pass" else ""
+            print(f"[mqtt-in] {topic} = {payload!r} -> {kind or 'ignorato'}{extra}",
                   flush=True)
 
         if event is None:
-            self.ignored += 1
+            seg = topic.rsplit("/", 1)[-1].lower()
+            if seg not in _TELEMETRY:      # telemetria (count/distance/...) non è un errore
+                self.ignored += 1
             return
         self._record(event, topic, payload)
+
+    def _passage_dir(self):
+        """Mappa un passaggio (raggio singolo, niente direzione) in enter/exit."""
+        mode = Config.PASSAGE_MODE
+        if mode == "enter":
+            return "enter"
+        if mode == "exit":
+            return "exit"
+        # alternate: alterna così entrate ≈ uscite ≈ passaggi/2
+        d = "enter" if self._toggle else "exit"
+        self._toggle = not self._toggle
+        return d
 
     # ---------------- parsing ----------------
 
     def _classify(self, topic, payload):
         enter = _tokens(Config.MQTT_ENTER_TOKENS)
         exit_ = _tokens(Config.MQTT_EXIT_TOKENS)
+        passt = _tokens(Config.MQTT_PASS_TOKENS)
 
-        # 1) ultimo segmento del topic
-        seg = topic.rsplit("/", 1)[-1].lower()
-        if seg in enter:
-            return "enter"
-        if seg in exit_:
-            return "exit"
+        def lookup(val):
+            if _match(val, enter):
+                return "enter"
+            if _match(val, exit_):
+                return "exit"
+            if _match(val, passt):
+                return "pass"
+            return None
 
-        # 2) payload come stringa semplice
-        if _match(payload, enter):
-            return "enter"
-        if _match(payload, exit_):
-            return "exit"
-
+        # 1) ultimo segmento del topic (es. .../enter, .../event con payload pass)
+        r = lookup(topic.rsplit("/", 1)[-1])
+        if r:
+            return r
+        # 2) payload come stringa semplice (es. "pass", "enter", "in")
+        r = lookup(payload)
+        if r:
+            return r
         # 3) payload JSON
         if payload[:1] in ("{", "["):
             try:
@@ -134,11 +166,9 @@ class MqttIn:
             if isinstance(data, dict):
                 for field in ("event", "direction", "type", "action",
                               "state", "dir"):
-                    v = data.get(field)
-                    if _match(v, enter):
-                        return "enter"
-                    if _match(v, exit_):
-                        return "exit"
+                    r = lookup(data.get(field))
+                    if r:
+                        return r
         return None
 
     # ---------------- registrazione ----------------
@@ -178,6 +208,8 @@ class MqttIn:
             "host": f"{Config.MQTT_HOST}:{Config.MQTT_PORT}",
             "topic": Config.MQTT_TOPIC,
             "messages": self.messages,
+            "passages": self.passages,
+            "passage_mode": Config.PASSAGE_MODE,
             "ignored": self.ignored,
             "last_topic": self.last_topic,
             "last_event_age": round(age, 1) if age is not None else None,

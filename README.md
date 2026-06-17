@@ -58,12 +58,34 @@ L'app per ogni messaggio decide **enter** o **exit** guardando, in ordine:
 3. **il payload JSON** — nei campi `event`, `direction`, `type`, `action`,
    `state`, `dir` — es. `{"event":"exit"}`, `{"direction":"in"}`
 
-Le parole riconosciute sono configurabili (token CSV):
+### Dispositivo a raggio singolo (conteggio passaggi)
+
+L'ESP people counter usa **un solo sensore a ultrasuoni**: rileva un
+**passaggio** (qualcuno attraversa il raggio) ma **non la direzione**. Pubblica
+`peoplecounter/event` = `pass` ad ogni passaggio.
+
+Poiché una persona genera ~2 passaggi (entra + esce), si **stima dividendo per 2**.
+Il parametro `PASSAGE_MODE` decide come mappare i passaggi:
+
+| `PASSAGE_MODE` | Comportamento |
+|---|---|
+| `alternate` *(default)* | alterna entrata/uscita → **entrate ≈ uscite ≈ passaggi/2** |
+| `enter` | ogni passaggio = entrata (se il varco è solo d'ingresso) |
+| `exit` | ogni passaggio = uscita |
+
+I messaggi di telemetria del firmware (`count`, `distance`, `availability`)
+vengono ignorati automaticamente.
+
+### Token (per dispositivi direzionali)
+
+Se un domani usi un dispositivo che distingue la direzione, i token CSV mappano
+le parole su enter/exit/pass:
 
 | Parametro | Default |
 |---|---|
 | `MQTT_ENTER_TOKENS` | `enter,in,entrata` |
 | `MQTT_EXIT_TOKENS` | `exit,out,uscita` |
+| `MQTT_PASS_TOKENS` | `pass,passage,passaggio` |
 
 Se l'ESP usa parole diverse (es. `IN`/`OUT`, `1`/`0`), aggiungile ai token
 dalle Impostazioni — niente modifiche al codice. La pagina Impostazioni mostra

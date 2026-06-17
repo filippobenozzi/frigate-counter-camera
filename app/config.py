@@ -17,11 +17,18 @@ class Config:
     MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
     MQTT_USER = os.environ.get("MQTT_USER", "")
     MQTT_PASS = os.environ.get("MQTT_PASS", "")
-    # topic (anche wildcard +/#) da sottoscrivere
-    MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "people_counter/#")
-    # token (CSV) per riconoscere enter/exit nel topic o nel payload
+    # topic (anche wildcard +/#) da sottoscrivere — default = baseTopic firmware
+    MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "peoplecounter/#")
+    # token (CSV) per riconoscere enter/exit/passaggio nel topic o nel payload
     MQTT_ENTER_TOKENS = os.environ.get("MQTT_ENTER_TOKENS", "enter,in,entrata")
     MQTT_EXIT_TOKENS = os.environ.get("MQTT_EXIT_TOKENS", "exit,out,uscita")
+    MQTT_PASS_TOKENS = os.environ.get("MQTT_PASS_TOKENS", "pass,passage,passaggio")
+
+    # Mappatura di un PASSAGGIO (raggio singolo = niente direzione):
+    #   alternate = alterna entrata/uscita  -> entrate ≈ uscite ≈ passaggi/2 (stima)
+    #   enter     = ogni passaggio è un'entrata
+    #   exit      = ogni passaggio è un'uscita
+    PASSAGE_MODE = os.environ.get("PASSAGE_MODE", "alternate").lower()
 
     DEBUG = os.environ.get("DEBUG", "1") == "1"
 

@@ -137,13 +137,13 @@
       <span class="tag {{ 'ok' if mqtt_connected else 'err' }}" id="mqtt-badge">{{ 'connesso' if mqtt_connected else 'non connesso' }}</span>
       <span class="tag restart">richiede restart</span></h3>
     <div class="help">
-      <p>L'app si sottoscrive al <strong>topic</strong> e a ogni messaggio decide se è un
-        <strong>enter</strong> o un <strong>exit</strong> in base ai <em>token</em>:
-        guarda prima l'ultimo segmento del topic, poi il payload (testo o JSON nei campi
-        <code>event/direction/type/...</code>).</p>
-      <p>Esempi che funzionano già: topic <code>.../enter</code> · payload <code>enter</code> ·
-        <code>in</code> · <code>{"event":"exit"}</code> · <code>{"direction":"out"}</code>.
-        Aggiungi i tuoi token se l'ESP usa parole diverse.</p>
+      <p>L'app si sottoscrive al <strong>topic</strong> e classifica ogni messaggio come
+        <strong>enter</strong>, <strong>exit</strong> o <strong>pass</strong> (passaggio) in
+        base ai <em>token</em>, guardando l'ultimo segmento del topic e il payload (testo o JSON).</p>
+      <p>L'ESP a raggio singolo non conosce la direzione: pubblica
+        <code>peoplecounter/event</code> = <code>pass</code> ad ogni passaggio. La
+        <strong>Modalità passaggio</strong> decide come stimare entrate/uscite:
+        <code>alternate</code> alterna entrata/uscita, così <strong>entrate ≈ uscite ≈ passaggi/2</strong>.</p>
     </div>
     <div class="field"><label>MQTT_HOST <span class="desc">broker (es. mosquitto)</span></label><input class="text" type="text" name="MQTT_HOST" autocomplete="off"></div>
     <div class="field"><label>MQTT_PORT</label><input type="number" name="MQTT_PORT" min="1" max="65535"></div>
@@ -152,6 +152,13 @@
     <div class="field"><label>MQTT_TOPIC <span class="desc">anche wildcard + / #</span></label><input class="text" type="text" name="MQTT_TOPIC" autocomplete="off"></div>
     <div class="field"><label>Token ENTER <span class="desc">CSV (es. enter,in,entrata)</span></label><input class="text" type="text" name="MQTT_ENTER_TOKENS" autocomplete="off"></div>
     <div class="field"><label>Token EXIT <span class="desc">CSV (es. exit,out,uscita)</span></label><input class="text" type="text" name="MQTT_EXIT_TOKENS" autocomplete="off"></div>
+    <div class="field"><label>Token PASS <span class="desc">passaggio (raggio singolo): es. pass</span></label><input class="text" type="text" name="MQTT_PASS_TOKENS" autocomplete="off"></div>
+    <div class="field"><label>Modalità passaggio <span class="desc">come stimare entrate/uscite</span></label>
+      <select name="PASSAGE_MODE">
+        <option value="alternate">alternate — entrate≈uscite≈passaggi/2</option>
+        <option value="enter">enter — ogni passaggio = entrata</option>
+        <option value="exit">exit — ogni passaggio = uscita</option>
+      </select></div>
     <div id="mqtt-health" class="feedback"></div>
   </div>
 
@@ -329,9 +336,10 @@
   async function loadHealth(){try{const r=await fetch('/api/health');const d=await r.json();
     const b=document.getElementById('mqtt-badge'); b.textContent=d.connected?'connesso':'non connesso'; b.className='tag '+(d.connected?'ok':'err');
     document.getElementById('sys-mqtt').textContent=d.connected?'CONNESSO':'OFFLINE';
-    document.getElementById('sys-mqtt-sub').textContent=`${d.messages} msg · ${d.ignored} ignorati`;
+    document.getElementById('sys-mqtt-sub').textContent=`${d.passages||0} passaggi · ${d.ignored} ignorati`;
     const mh=document.getElementById('mqtt-health');
-    mh.innerHTML=`broker ${d.host} · topic <code>${d.topic}</code> · ${d.messages} messaggi ricevuti`+
+    mh.innerHTML=`broker ${d.host} · topic <code>${d.topic}</code> · ${d.messages} msg · `+
+      `<strong>${d.passages||0} passaggi</strong> (mode ${d.passage_mode})`+
       (d.last_topic?` · ultimo: <code>${d.last_topic}</code>`:'')+
       (d.ignored?` · <span style="color:var(--warn)">${d.ignored} non riconosciuti (controlla i token)</span>`:'');
   }catch(e){}}

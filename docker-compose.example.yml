@@ -41,9 +41,11 @@ services:
       MQTT_PORT: "1883"
       MQTT_USER: "espuser"
       MQTT_PASS: "esp-cambia-questa-password"
-      MQTT_TOPIC: "people_counter/#"          # adatta al topic del tuo ESP
+      MQTT_TOPIC: "peoplecounter/#"           # = baseTopic del firmware ESP
       MQTT_ENTER_TOKENS: "enter,in,entrata"   # parole che indicano un ingresso
       MQTT_EXIT_TOKENS: "exit,out,uscita"     # parole che indicano un'uscita
+      MQTT_PASS_TOKENS: "pass,passage,passaggio"   # l'ESP pubblica .../event = "pass"
+      PASSAGE_MODE: "alternate"               # alternate => entrate≈uscite≈passaggi/2
 
       # ---- Auth dashboard (vuote = pubblica) ----
       AUTH_USER: "admin"

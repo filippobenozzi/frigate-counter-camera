@@ -1,8 +1,8 @@
 {
   "camera": "ingresso",
-  "enter": 3,
-  "exit": 1,
-  "occupancy": 2,
-  "updated_at": "2026-06-13 16:22:00",
-  "updated_ts": 1781360520.3115973
+  "enter": 2,
+  "exit": 2,
+  "occupancy": 0,
+  "updated_at": "2026-06-17 11:06:21",
+  "updated_ts": 1781687181.0987718
 }

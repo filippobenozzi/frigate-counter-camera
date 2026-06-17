@@ -16,6 +16,8 @@ def banner():
     print(f" Topic      : {Config.MQTT_TOPIC}", flush=True)
     print(f" Enter tok  : {Config.MQTT_ENTER_TOKENS}", flush=True)
     print(f" Exit  tok  : {Config.MQTT_EXIT_TOKENS}", flush=True)
+    print(f" Pass  tok  : {Config.MQTT_PASS_TOKENS}  (mode={Config.PASSAGE_MODE})",
+          flush=True)
     print(f" Camera     : {Config.CAMERA}", flush=True)
     print(f" Storage    : JSON ({Config.LOG_DIR})"
           f"{' + Postgres' if Config.postgres_enabled() else ''}", flush=True)
